@@ -245,13 +245,18 @@ function loadKidDashboard() {
     const allowDisplay = document.getElementById('kid-allowance-display');
 
     // Initial fetch to check allowance
+    let hasCheckedAllowance = false;
+
     // Use subscribe for live updates
     const unsubKid = DB.subscribeToKid(currentUser.uid, (kid) => {
         balDisplay.innerText = `$${(kid.balance || 0).toFixed(2)}`;
         allowDisplay.innerText = `$${(kid.allowance || 0).toFixed(2)}/week`; // If we had allowance setting
 
-        // Check allowance
-        checkAllowance(kid);
+        // Check allowance (only once per session to avoid loops)
+        if (!hasCheckedAllowance) {
+            checkAllowance(kid);
+            hasCheckedAllowance = true;
+        }
     });
     unsubscribes.push(unsubKid);
 
