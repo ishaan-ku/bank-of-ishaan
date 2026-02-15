@@ -3,11 +3,11 @@ const Auth = {
     role: null,
 
     async signIn() {
-        const { getAuth, signInWithPopup, GoogleAuthProvider } = window.firebaseModules;
+        const { getAuth, signInWithRedirect, GoogleAuthProvider } = window.firebaseModules;
         const auth = getAuth();
         const provider = new GoogleAuthProvider();
         try {
-            await signInWithPopup(auth, provider);
+            await signInWithRedirect(auth, provider);
         } catch (error) {
             console.error("Login failed", error);
             alert("Login failed: " + error.message);
