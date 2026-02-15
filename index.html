@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank of Ishaan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center z-10 hidden"
+        id="nav-bar">
+        <div class="flex items-center space-x-2">
+            <div class="bg-brand-500 text-white p-2 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <span class="font-bold text-xl tracking-tight text-slate-800">Bank of Ishaan</span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span id="user-display-name" class="text-sm font-medium text-slate-600 hidden sm:block"></span>
+            <img id="user-avatar" src="" alt="Avatar"
+                class="h-8 w-8 rounded-full bg-slate-200 object-cover border border-slate-300">
+            <button id="btn-logout" class="text-sm text-slate-500 hover:text-brand-600 font-medium">Sign Out</button>
+        </div>
+    </nav>
+
+    <!-- App Content Container -->
+    <main class="flex-1 relative overflow-y-auto w-full max-w-5xl mx-auto p-4 sm:p-6" id="app-container">
+
+        <!-- LOADING VIEW -->
+        <div id="view-loading" class="absolute inset-0 flex items-center justify-center bg-white z-50">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+        </div>
+
+        <!-- LOGIN VIEW -->
+        <div id="view-login" class="hidden h-full flex flex-col items-center justify-center">
+            <div class="text-center mb-10">
+                <div class="bg-brand-500 text-white p-4 rounded-2xl inline-block mb-4 shadow-lg shadow-brand-500/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h1 class="text-4xl font-extrabold text-slate-900 mb-2">Bank of Ishaan</h1>
+                <p class="text-slate-500 text-lg">Manage allowances and savings easily.</p>
+            </div>
+
+            <button id="btn-login-google"
+                class="group relative flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 px-8 py-4 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 w-full max-w-sm">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6"
+                    alt="Google">
+                <span class="font-semibold text-lg">Sign in with Google</span>
+            </button>
+        </div>
+
+        <!-- ONBOARDING / ROLE SELECT VIEW -->
+        <div id="view-onboarding" class="hidden h-full flex flex-col items-center justify-center max-w-lg mx-auto">
+            <h2 class="text-3xl font-bold mb-8 text-center">Who are you?</h2>
+            <div class="grid grid-cols-2 gap-6 w-full">
+                <button id="btn-role-parent"
+                    class="flex flex-col items-center p-8 bg-white border-2 border-transparent hover:border-brand-500 rounded-2xl shadow-lg transition-all hover:-translate-y-1">
+                    <div class="bg-blue-100 p-4 rounded-full mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-600" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold">Parent</span>
+                    <span class="text-sm text-slate-500 mt-2 text-center">I manage the money</span>
+                </button>
+                <button id="btn-role-kid"
+                    class="flex flex-col items-center p-8 bg-white border-2 border-transparent hover:border-brand-500 rounded-2xl shadow-lg transition-all hover:-translate-y-1">
+                    <div class="bg-green-100 p-4 rounded-full mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-green-600" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold">Kid</span>
+                    <span class="text-sm text-slate-500 mt-2 text-center">I save the money</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- PARENT DASHBOARD VIEW -->
+        <div id="view-parent" class="hidden space-y-8">
+            <header class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">Parent Dashboard</h2>
+                <p class="text-slate-500">Manage your kids' accounts</p>
+            </header>
+
+            <!-- Kids List -->
+            <div id="parent-kids-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Kid Card Template (Inserted via JS) -->
+            </div>
+
+            <!-- Add Kid Section -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-md">
+                <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-brand-500" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Link a Kid
+                </h3>
+                <form id="form-add-kid" class="flex gap-2">
+                    <input type="email" id="input-kid-email" placeholder="Kid's Google Email"
+                        class="flex-1 px-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
+                        required>
+                    <button type="submit"
+                        class="bg-slate-900 text-white px-4 py-2 rounded-xl font-medium hover:bg-slate-800 transition-colors">Link</button>
+                </form>
+                <p class="text-xs text-slate-400 mt-2">Enter the email they will use to sign in.</p>
+            </div>
+        </div>
+
+        <!-- KID DASHBOARD VIEW -->
+        <div id="view-kid" class="hidden space-y-6">
+            <!-- Balance Card -->
+            <div
+                class="bg-gradient-to-br from-brand-500 to-brand-600 rounded-3xl p-8 text-white shadow-xl shadow-brand-500/30 transform hover:scale-[1.01] transition-transform cursor-default">
+                <p class="text-brand-100 font-medium mb-1">Current Balance</p>
+                <h2 class="text-5xl sm:text-7xl font-bold tracking-tighter" id="kid-balance-display">$0.00</h2>
+                <div class="mt-8 flex gap-4">
+                    <div class="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20">
+                        <p class="text-xs text-brand-100 uppercase tracking-wider font-semibold">Allowance</p>
+                        <p class="font-bold text-lg" id="kid-allowance-display">$0/week</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions -->
+            <div class="mt-8">
+                <h3 class="text-xl font-bold text-slate-800 mb-4">Recent Activity</h3>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <ul id="kid-transactions-list" class="divide-y divide-slate-100">
+                        <!-- Transactions injected here -->
+                        <li class="p-4 text-center text-slate-400">No transactions yet.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modals (Hidden by default) -->
+    <div id="modal-transaction"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-100">
+            <h3 class="text-xl font-bold mb-4" id="modal-transaction-title">Update Balance</h3>
+            <form id="form-transaction">
+                <input type="hidden" id="modal-kid-id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2 text-slate-400">$</span>
+                            <input type="number" id="input-amount" step="0.01" min="0.01"
+                                class="w-full pl-8 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 outline-none"
+                                placeholder="0.00" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                        <input type="text" id="input-description"
+                            class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 outline-none"
+                            placeholder="e.g. Chores, Birthday gift" required>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" onclick="closeModal()"
+                            class="flex-1 px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors">Cancel</button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 bg-brand-600 text-white font-medium rounded-xl hover:bg-brand-700 shadow-md shadow-brand-500/20 transition-colors">Confirm</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Allowance Modal -->
+    <div id="modal-allowance"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl transform transition-all scale-100">
+            <h3 class="text-xl font-bold mb-4">Set Weekly Allowance</h3>
+            <form id="form-allowance">
+                <input type="hidden" id="modal-allowance-kid-id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Weekly Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2 text-slate-400">$</span>
+                            <input type="number" id="input-allowance-amount" step="1" min="0"
+                                class="w-full pl-8 pr-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 outline-none"
+                                placeholder="0" required>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" onclick="closeAllowanceModal()"
+                            class="flex-1 px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors">Cancel</button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 bg-brand-600 text-white font-medium rounded-xl hover:bg-brand-700 shadow-md shadow-brand-500/20 transition-colors">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Scripts (Compat for easier CDN usage without build step, using Modular syntax where possible or Compat if easier for quick prototype, but Modular is recommended now. I will use Modular SDK via CDN) -->
+    <!-- Using ES Modules via Import Map is cleaner for modern browsers -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, increment, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Expose to window for app.js to use (simplifying scope for this prototype)
+        window.firebaseModules = {
+            initializeApp,
+            getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+            getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, increment, getDocs, orderBy, limit
+        };
+    </script>
+
+    <script src="js/firebase-config.js" defer></script>
+    <script src="js/db.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/app.js" defer></script>
+</body>
+
+</html>
