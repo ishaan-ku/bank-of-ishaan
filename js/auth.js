@@ -12,20 +12,22 @@ const Auth = {
     },
 
     async signIn() {
-        this.log("Starting Sign In...");
-        const { getAuth, signInWithRedirect, GoogleAuthProvider, setPersistence, browserLocalPersistence } = window.firebaseModules;
+        this.log("Starting Sign In (Popup Mode)...");
+        const { getAuth, signInWithPopup, GoogleAuthProvider, setPersistence, browserLocalPersistence } = window.firebaseModules;
         const auth = getAuth();
         const provider = new GoogleAuthProvider();
 
         try {
             this.log("Setting persistence...");
             await setPersistence(auth, browserLocalPersistence);
-            this.log("Redirecting to Google...");
-            await signInWithRedirect(auth, provider);
+            await signInWithPopup(auth, provider);
         } catch (error) {
-            this.log("Login Error: " + error.message);
-            console.error("Login failed", error);
-            alert("Login failed: " + error.message);
+            this.log("Login Error: " + error.code);
+            if (error.code === 'auth/popup-blocked') {
+                alert("Login Popup Blocked!\n\nPlease look for a 'Pop-up blocked' icon in your address bar (usually top right), click it, and select 'Always allow'. Then try again.");
+            } else {
+                alert("Login failed: " + error.message);
+            }
         }
     },
 
