@@ -35,6 +35,17 @@ const Auth = {
                     window.db = getFirestore(app);
                     const auth = getAuth(app);
 
+                    // Check for redirect result
+                    const { getRedirectResult } = window.firebaseModules;
+                    getRedirectResult(auth).then((result) => {
+                        if (result) {
+                            console.log("Redirect login success", result.user);
+                        }
+                    }).catch((error) => {
+                        console.error("Redirect login error", error);
+                        alert("Login failed: " + error.message);
+                    });
+
                     onAuthStateChanged(auth, async (user) => {
                         this.user = user;
                         if (user) {
