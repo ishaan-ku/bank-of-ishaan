@@ -109,17 +109,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('form-transaction').addEventListener('submit', async (e) => {
         e.preventDefault();
         const kidId = document.getElementById('modal-kid-id').value;
-        const amount = document.getElementById('input-amount').value;
+        let amount = parseFloat(document.getElementById('input-amount').value);
         const desc = document.getElementById('input-description').value;
 
+        // Determine transaction type
+        const typeEl = document.getElementById('modal-transaction-type');
+        const type = typeEl ? typeEl.value : 'add';
+
+        if (type === 'subtract') {
+            amount = -Math.abs(amount);
+        }
+
         if (amount && desc) {
-            await DB.updateBalance(kidId, amount, desc); // Positive for deposit. For withdraw, need UI switch or negative input.
-            // For MVP, let's just make it Add Money.
-            // TODO: Add toggle for Add vs Subtract.
-            // For now, assume Add. If user wants subtract, they can type negative? Input is type=number min=0.01.
-            // Let's add a toggle to the modal in a future content update if needed.
+            await DB.updateBalance(kidId, amount, desc);
             closeModal();
             document.getElementById('form-transaction').reset();
+            if (typeEl) typeEl.value = 'add'; // Reset to default
         }
     });
 
