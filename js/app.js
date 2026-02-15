@@ -208,7 +208,8 @@ function loadParentDashboard() {
                     <p class="text-3xl font-bold text-slate-900 balance-display" id="bal-${kid.id}">$${(kid.balance || 0).toFixed(2)}</p>
                 </div>
                 <div class="flex gap-2">
-                    <button class="flex-1 bg-brand-500 hover:bg-brand-600 text-white py-2 rounded-xl font-medium transition-colors btn-add-money" data-id="${kid.id}">Add Money</button>
+                    <button class="flex-1 bg-brand-500 hover:bg-brand-600 text-white py-2 rounded-xl font-medium transition-colors btn-add-money" data-id="${kid.id}">Add</button>
+                    <button class="flex-1 bg-red-100 hover:bg-red-200 text-red-600 py-2 rounded-xl font-medium transition-colors btn-sub-money" data-id="${kid.id}">Subtract</button>
                     <button class="px-4 py-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl font-medium transition-colors btn-set-allowance" data-id="${kid.id}">Allowance</button>
                 </div>
             `;
@@ -225,7 +226,21 @@ function loadParentDashboard() {
             card.querySelector('.btn-add-money').addEventListener('click', () => {
                 document.getElementById('modal-transaction').classList.remove('hidden');
                 document.getElementById('modal-kid-id').value = kid.id;
+                document.getElementById('modal-transaction-type').value = 'add';
                 document.getElementById('modal-transaction-title').innerText = `Add Money to ${kid.displayName}`;
+                document.getElementById('btn-confirm-transaction').classList.remove('bg-red-600', 'hover:bg-red-700');
+                document.getElementById('btn-confirm-transaction').classList.add('bg-brand-600', 'hover:bg-brand-700');
+                document.getElementById('btn-confirm-transaction').innerText = "Add Money";
+            });
+
+            card.querySelector('.btn-sub-money').addEventListener('click', () => {
+                document.getElementById('modal-transaction').classList.remove('hidden');
+                document.getElementById('modal-kid-id').value = kid.id;
+                document.getElementById('modal-transaction-type').value = 'subtract';
+                document.getElementById('modal-transaction-title').innerText = `Subtract from ${kid.displayName}`;
+                document.getElementById('btn-confirm-transaction').classList.remove('bg-brand-600', 'hover:bg-brand-700');
+                document.getElementById('btn-confirm-transaction').classList.add('bg-red-600', 'hover:bg-red-700');
+                document.getElementById('btn-confirm-transaction').innerText = "Take Away";
             });
 
             card.querySelector('.btn-set-allowance').addEventListener('click', () => {
@@ -259,6 +274,18 @@ function loadKidDashboard() {
         }
     });
     unsubscribes.push(unsubKid);
+
+    // Spend Button
+    document.getElementById('btn-kid-spend').onclick = () => {
+        document.getElementById('modal-transaction').classList.remove('hidden');
+        document.getElementById('modal-kid-id').value = currentUser.uid;
+        document.getElementById('modal-transaction-type').value = 'subtract';
+        document.getElementById('modal-transaction-title').innerText = `Spend Money`;
+        document.getElementById('input-description').placeholder = "What did you buy?";
+        document.getElementById('btn-confirm-transaction').classList.remove('bg-brand-600', 'hover:bg-brand-700');
+        document.getElementById('btn-confirm-transaction').classList.add('bg-red-600', 'hover:bg-red-700');
+        document.getElementById('btn-confirm-transaction').innerText = "Spend";
+    };
 
     // Transactions
     const list = document.getElementById('kid-transactions-list');

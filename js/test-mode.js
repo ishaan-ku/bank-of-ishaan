@@ -16,6 +16,9 @@ const TestMode = {
         document.getElementById('btn-test-sub-money').addEventListener('click', () => this.update(-5, "Manual Withdrawal"));
         document.getElementById('btn-test-allowance').addEventListener('click', () => this.update(10, "Weekly Allowance"));
 
+        const btnSpend = document.getElementById('btn-test-kid-spend');
+        if (btnSpend) btnSpend.addEventListener('click', () => this.update(-5, "Kid Spent Money"));
+
         // Global Key Listener for ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === "Escape" && this.isActive) {

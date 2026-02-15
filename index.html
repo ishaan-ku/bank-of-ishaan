@@ -215,6 +215,10 @@
                         class="bg-gradient-to-br from-brand-500 to-brand-600 rounded-3xl p-8 text-white shadow-xl shadow-brand-500/30 mb-8">
                         <p class="text-brand-100 font-medium mb-1">Current Balance</p>
                         <h2 class="text-5xl font-bold tracking-tighter" id="test-kid-balance">$0.00</h2>
+                        <button id="btn-test-kid-spend"
+                            class="mt-4 bg-white/20 hover:bg-white/30 text-white border border-white/40 px-6 py-2 rounded-xl font-bold transition-colors w-full">
+                            Spend $5.00
+                        </button>
                     </div>
 
                     <h3 class="font-bold text-slate-800 mb-4">Activity Log</h3>
@@ -273,6 +277,10 @@
                         <p class="text-xs text-brand-100 uppercase tracking-wider font-semibold">Allowance</p>
                         <p class="font-bold text-lg" id="kid-allowance-display">$0/week</p>
                     </div>
+                    <button id="btn-kid-spend"
+                        class="bg-white text-brand-600 px-6 py-2 rounded-xl font-bold shadow-lg hover:bg-brand-50 transition-colors">
+                        Spend Money
+                    </button>
                 </div>
             </div>
 
@@ -297,6 +305,7 @@
             <h3 class="text-xl font-bold mb-4" id="modal-transaction-title">Update Balance</h3>
             <form id="form-transaction">
                 <input type="hidden" id="modal-kid-id">
+                <input type="hidden" id="modal-transaction-type" value="add">
                 <div class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
@@ -316,7 +325,7 @@
                     <div class="flex gap-2 pt-2">
                         <button type="button" onclick="closeModal()"
                             class="flex-1 px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors">Cancel</button>
-                        <button type="submit"
+                        <button type="submit" id="btn-confirm-transaction"
                             class="flex-1 px-4 py-2 bg-brand-600 text-white font-medium rounded-xl hover:bg-brand-700 shadow-md shadow-brand-500/20 transition-colors">Confirm</button>
                     </div>
                 </div>
