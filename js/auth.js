@@ -2,13 +2,28 @@ const Auth = {
     user: null,
     role: null,
 
+    log(msg) {
+        console.log(msg);
+        const el = document.getElementById('auth-debug-log');
+        if (el) {
+            el.classList.remove('hidden');
+            el.innerText += msg + '\n';
+        }
+    },
+
     async signIn() {
-        const { getAuth, signInWithRedirect, GoogleAuthProvider } = window.firebaseModules;
+        this.log("Starting Sign In...");
+        const { getAuth, signInWithRedirect, GoogleAuthProvider, setPersistence, browserLocalPersistence } = window.firebaseModules;
         const auth = getAuth();
         const provider = new GoogleAuthProvider();
+
         try {
+            this.log("Setting persistence...");
+            await setPersistence(auth, browserLocalPersistence);
+            this.log("Redirecting to Google...");
             await signInWithRedirect(auth, provider);
         } catch (error) {
+            this.log("Login Error: " + error.message);
             console.error("Login failed", error);
             alert("Login failed: " + error.message);
         }
@@ -22,10 +37,13 @@ const Auth = {
     },
 
     init(onUserChange) {
+        this.log = this.log.bind(this);
         // Wait for modules then init
         const checkModules = setInterval(() => {
             if (window.firebaseModules && window.firebaseConfig) {
                 clearInterval(checkModules);
+                this.log("Firebase modules loaded.");
+
                 const { initializeApp } = window.firebaseModules;
                 const { getAuth, onAuthStateChanged } = window.firebaseModules;
                 const { getFirestore } = window.firebaseModules;
@@ -39,25 +57,29 @@ const Auth = {
                     const { getRedirectResult } = window.firebaseModules;
                     getRedirectResult(auth).then((result) => {
                         if (result) {
-                            console.log("Redirect login success", result.user);
+                            this.log("Redirect success! User: " + result.user.email);
+                        } else {
+                            this.log("No redirect result found.");
                         }
                     }).catch((error) => {
-                        console.error("Redirect login error", error);
-                        alert("Login failed: " + error.message);
+                        this.log("Redirect error: " + error.message);
                     });
 
                     onAuthStateChanged(auth, async (user) => {
                         this.user = user;
                         if (user) {
+                            this.log("Auth State: Logged In as " + user.email);
                             // Check role
                             this.role = await DB.getUserRole(user.uid);
+                            this.log("Role: " + (this.role || "None"));
                         } else {
+                            this.log("Auth State: Signed Out");
                             this.role = null;
                         }
                         onUserChange(user, this.role);
                     });
                 } catch (e) {
-                    console.error("Firebase Init Error:", e);
+                    this.log("Init Error: " + e.message);
                 }
             }
         }, 100);

@@ -108,9 +108,11 @@
             </button>
 
             <button id="btn-test-mode"
-                class="text-slate-400 hover:text-brand-600 font-medium text-sm transition-colors">
+                class="text-slate-400 hover:text-brand-600 font-medium text-sm transition-colors mb-4">
                 Try Test Mode (Simulation)
             </button>
+            <div id="auth-debug-log"
+                class="text-xs text-slate-400 font-mono max-w-sm text-left bg-slate-100 p-2 rounded hidden"></div>
         </div>
 
         <!-- ONBOARDING / ROLE SELECT VIEW -->
@@ -365,13 +367,13 @@
     <!-- Using ES Modules via Import Map is cleaner for modern browsers -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, increment, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // Expose to window for app.js to use
         window.firebaseModules = {
             initializeApp,
-            getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged,
+            getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence,
             getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, increment, getDocs, orderBy, limit
         };
     </script>
