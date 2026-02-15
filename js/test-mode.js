@@ -3,6 +3,7 @@ const TestMode = {
     isActive: false,
     balance: 0,
     history: [],
+    allowanceInterval: null,
 
     init() {
         const btn = document.getElementById('btn-test-mode');
@@ -37,10 +38,18 @@ const TestMode = {
 
         // Render initial state
         this.render();
+
+        // Start 30s Allowance Timer
+        this.allowanceInterval = setInterval(() => {
+            this.update(10, "Weekly Allowance (Auto)");
+            // Flash effect or toast could go here
+        }, 30000); // 30 seconds
     },
 
     stop() {
         this.isActive = false;
+        if (this.allowanceInterval) clearInterval(this.allowanceInterval);
+
         document.getElementById('view-test-mode').classList.add('hidden');
         document.getElementById('view-login').classList.remove('hidden');
         // Reset to initial state (login view)

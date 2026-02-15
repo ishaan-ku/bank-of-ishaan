@@ -100,13 +100,15 @@
                 <p class="text-slate-500 text-lg">Manage allowances and savings easily.</p>
             </div>
 
-            <button id="btn-login-google" class="group relative flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 px-8 py-4 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 w-full max-w-sm mb-4">
+            <button id="btn-login-google"
+                class="group relative flex items-center justify-center gap-3 bg-white border border-slate-200 text-slate-700 px-8 py-4 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 w-full max-w-sm mb-4">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6"
                     alt="Google">
                 <span class="font-semibold text-lg">Sign in with Google</span>
             </button>
-            
-            <button id="btn-test-mode" class="text-slate-400 hover:text-brand-600 font-medium text-sm transition-colors">
+
+            <button id="btn-test-mode"
+                class="text-slate-400 hover:text-brand-600 font-medium text-sm transition-colors">
                 Try Test Mode (Simulation)
             </button>
         </div>
@@ -148,54 +150,69 @@
                 <span>TEST MODE SIMULATION</span>
                 <span>Press ESC to Exit</span>
             </div>
-            <div class="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-300 h-full overflow-hidden">
-                
+            <div
+                class="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-slate-300 h-full overflow-hidden">
+
                 <!-- Parent Side -->
                 <div class="flex-1 p-6 bg-slate-50 flex flex-col overflow-y-auto">
                     <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         <span class="bg-blue-100 text-blue-600 p-1 rounded">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
                         </span>
                         Test Parent
                     </h2>
-                    
+
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
                         <div class="flex items-center gap-4 mb-4">
-                            <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-xl">👶</div>
+                            <div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-xl">👶
+                            </div>
                             <div>
                                 <h4 class="font-bold text-lg text-slate-800">Test Kid</h4>
                                 <p class="text-sm text-slate-500">kid@example.com</p>
                             </div>
                         </div>
                         <div class="mb-6">
-                             <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Kid's Balance</p>
-                             <p class="text-3xl font-bold text-slate-900" id="test-parent-view-balance">$0.00</p>
+                            <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Kid's Balance</p>
+                            <p class="text-3xl font-bold text-slate-900" id="test-parent-view-balance">$0.00</p>
                         </div>
                         <div class="space-y-3">
-                            <button id="btn-test-add-money" class="w-full bg-brand-500 hover:bg-brand-600 text-white py-3 rounded-xl font-medium transition-colors">
+                            <button id="btn-test-add-money"
+                                class="w-full bg-brand-500 hover:bg-brand-600 text-white py-3 rounded-xl font-medium transition-colors">
                                 Add $5.00
                             </button>
-                            <button id="btn-test-sub-money" class="w-full bg-red-100 hover:bg-red-200 text-red-600 py-3 rounded-xl font-medium transition-colors">
+                            <button id="btn-test-sub-money"
+                                class="w-full bg-red-100 hover:bg-red-200 text-red-600 py-3 rounded-xl font-medium transition-colors">
                                 Subtract $5.00
                             </button>
-                             <button id="btn-test-allowance" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-medium transition-colors">
-                                Trigger Allowance ($10)
+                            <button id="btn-test-allowance"
+                                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 py-3 rounded-xl font-medium transition-colors">
+                                Trigger Allowance (Also runs every 30s)
                             </button>
                         </div>
                     </div>
-                    <p class="mt-4 text-sm text-slate-400 text-center">Actions here update the right screen instantly.</p>
+                    <p class="mt-4 text-sm text-slate-400 text-center">Actions here update the right screen instantly.
+                    </p>
                 </div>
 
                 <!-- Kid Side -->
                 <div class="flex-1 p-6 bg-white flex flex-col overflow-y-auto">
-                     <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                         <span class="bg-green-100 text-green-600 p-1 rounded">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
                         </span>
                         Test Kid
                     </h2>
 
-                    <div class="bg-gradient-to-br from-brand-500 to-brand-600 rounded-3xl p-8 text-white shadow-xl shadow-brand-500/30 mb-8">
+                    <div
+                        class="bg-gradient-to-br from-brand-500 to-brand-600 rounded-3xl p-8 text-white shadow-xl shadow-brand-500/30 mb-8">
                         <p class="text-brand-100 font-medium mb-1">Current Balance</p>
                         <h2 class="text-5xl font-bold tracking-tighter" id="test-kid-balance">$0.00</h2>
                     </div>
