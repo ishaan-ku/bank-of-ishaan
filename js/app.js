@@ -169,10 +169,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (amount) {
-            await DB.updateBalance(kidId, amount, desc, accountType);
-            closeModal();
-            document.getElementById('form-transaction').reset();
-            if (typeEl) typeEl.value = 'add'; // Reset to default
+            try {
+                await DB.updateBalance(kidId, amount, desc, accountType);
+                closeModal();
+                document.getElementById('form-transaction').reset();
+                if (typeEl) typeEl.value = 'add'; // Reset to default
+            } catch (err) {
+                alert(err.message);
+            }
         }
     });
 
@@ -470,6 +474,28 @@ function loadKidDashboard() {
             checkAllowance(kid);
             checkInterest(kid);
             hasCheckedAllowance = true;
+        }
+
+        // Show Withdrawal Limit info if present
+        const limitDisplay = document.getElementById('kid-savings-limit-display');
+        const currentMonth = new Date().getMonth();
+        let count = 0;
+
+        if (kid.lastWithdrawalMonth === currentMonth) {
+            count = kid.savingsWithdrawalCount || 0;
+        }
+
+        if (limitDisplay) {
+            limitDisplay.innerText = `${4 - count} withdrawals left this month`;
+        } else {
+            // Inject if missing (Quick fix since we don't want to edit HTML structure heavily)
+            if (savDisplay && savDisplay.parentElement) {
+                const p = document.createElement('p');
+                p.id = 'kid-savings-limit-display';
+                p.className = 'text-xs text-emerald-200 mt-1';
+                p.innerText = `${4 - count} withdrawals left this month`;
+                savDisplay.parentElement.appendChild(p);
+            }
         }
     });
     unsubscribes.push(unsubKid);

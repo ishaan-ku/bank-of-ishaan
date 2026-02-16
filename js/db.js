@@ -68,26 +68,85 @@ const DB = {
         });
     },
 
+    // Check and update savings withdrawal limit
+    // Returns true if allowed, throws error if not
+    async checkSavingsLimit(kidUid, transaction) {
+        const { doc, serverTimestamp } = window.firebaseModules;
+        const userRef = doc(this.db, "users", kidUid);
+        const userDoc = await transaction.get(userRef);
+
+        if (!userDoc.exists()) throw new Error("User not found");
+
+        const data = userDoc.data();
+        const now = new Date();
+        const currentMonth = now.getMonth(); // 0-11
+        const lastMonth = data.lastWithdrawalMonth;
+        let count = data.savingsWithdrawalCount || 0;
+
+        // Reset if new month
+        if (lastMonth === undefined || lastMonth !== currentMonth) {
+            count = 0;
+            transaction.update(userRef, {
+                savingsWithdrawalCount: 0,
+                lastWithdrawalMonth: currentMonth
+            });
+        }
+
+        if (count >= 4) {
+            throw new Error("Savings withdrawal limit reached (4/month). You cannot spend or move from Savings until next month.");
+        }
+
+        // Increment count
+        transaction.update(userRef, {
+            savingsWithdrawalCount: count + 1,
+            lastWithdrawalMonth: currentMonth
+        });
+    },
+
     // Update balance
     async updateBalance(kidUid, amount, description, accountType = 'checking') {
-        const { doc, updateDoc, addDoc, collection, serverTimestamp, increment } = window.firebaseModules;
+        const { doc, updateDoc, addDoc, collection, serverTimestamp, increment, runTransaction } = window.firebaseModules;
 
         const balanceField = accountType === 'savings' ? 'savingsBalance' : 'balance';
         const accountName = accountType === 'savings' ? 'Savings' : 'Checking';
+        const isSpending = parseFloat(amount) < 0;
 
-        // Add transaction
-        await addDoc(collection(this.db, "transactions"), {
-            kidId: kidUid,
-            amount: parseFloat(amount), // can be negative
-            description: `${description} (${accountName})`,
-            timestamp: serverTimestamp(),
-            accountType: accountType
-        });
+        // If spending from Savings, check limit
+        if (accountType === 'savings' && isSpending) {
+            await runTransaction(this.db, async (transaction) => {
+                await this.checkSavingsLimit(kidUid, transaction);
 
-        // Update balance
-        await updateDoc(doc(this.db, "users", kidUid), {
-            [balanceField]: increment(parseFloat(amount))
-        });
+                // Add transaction
+                const newTxRef = doc(collection(this.db, "transactions"));
+                transaction.set(newTxRef, {
+                    kidId: kidUid,
+                    amount: parseFloat(amount),
+                    description: `${description} (${accountName})`,
+                    timestamp: serverTimestamp(),
+                    accountType: accountType
+                });
+
+                // Update balance
+                transaction.update(doc(this.db, "users", kidUid), {
+                    [balanceField]: increment(parseFloat(amount))
+                });
+            });
+        } else {
+            // Normal update (Checking or Adding money)
+            // Add transaction
+            await addDoc(collection(this.db, "transactions"), {
+                kidId: kidUid,
+                amount: parseFloat(amount), // can be negative
+                description: `${description} (${accountName})`,
+                timestamp: serverTimestamp(),
+                accountType: accountType
+            });
+
+            // Update balance
+            await updateDoc(doc(this.db, "users", kidUid), {
+                [balanceField]: increment(parseFloat(amount))
+            });
+        }
     },
 
     // Internal Transfer (Checking <-> Savings)
@@ -106,6 +165,11 @@ const DB = {
             const currentBal = userDoc.data()[fromField] || 0;
             if (currentBal < amount) {
                 throw new Error(`Insufficient funds in ${fromType}`);
+            }
+
+            // If moving FROM Savings, check limit
+            if (fromType === 'savings') {
+                await this.checkSavingsLimit(kidUid, transaction);
             }
 
             transaction.update(userRef, {
