@@ -50,10 +50,21 @@ const DB = {
     },
 
     async linkKidToParent(parentUid, kidUid) {
-        const { doc, updateDoc, arrayUnion } = window.firebaseModules;
+        const { doc, updateDoc, setDoc, arrayUnion } = window.firebaseModules;
+
+        // 1. Update Kid's document (Redundant but good for data integrity)
         await updateDoc(doc(this.db, "users", kidUid), {
             parentIds: arrayUnion(parentUid),
-            parentId: parentUid // Keep for backward compat if needed, but array is primary now
+            // Don't overwrite parentId if it's already set to someone else, to avoid breaking legacy query for the first parent.
+            // But if we want to support switching "primary" parent, we might. 
+            // For now, let's leave parentId alone if it exists.
+        });
+
+        // 2. Create a "relationship" document in the parent's subcollection
+        // This avoids index requirements for querying "my kids"
+        await setDoc(doc(this.db, "users", parentUid, "linked_kids", kidUid), {
+            kidUid: kidUid,
+            linkedAt: new Date()
         });
     },
 
@@ -77,34 +88,49 @@ const DB = {
 
     // Get kids linked to this parent
     async getKids(parentUid) {
-        const { collection, query, where, getDocs } = window.firebaseModules;
+        const { collection, query, where, getDocs, doc, getDoc } = window.firebaseModules;
 
-        // Try to query by array (new way)
-        // If security rules or index issues arise, we might need a fallback, 
-        // but for this "No-Build" prototype, we assume we can query.
-        // Note: array-contains requires an index sometimes, but usually works for basic fields.
+        const kidsMap = new Map();
 
-        // Strategy: Query for 'parentIds' array-contains parentUid.
-        // Fallback: Query for 'parentId' == parentUid (legacy).
-
-        // We can't do OR queries easily without complex setup.
-        // Let's just do two queries and merge client side if necessary, 
-        // OR just migrate everyone to have parentIds. 
-        // Since we update parentId AND parentIds on link, let's try to query both?
-        // Actually, let's just use the array query. If it fails, we catch.
+        // Helper to add kid to map
+        const addKid = (data) => {
+            if (data && data.id && !kidsMap.has(data.id)) {
+                kidsMap.set(data.id, data);
+            }
+        };
 
         try {
-            const q = query(collection(this.db, "users"), where("parentIds", "array-contains", parentUid));
-            const snap = await getDocs(q);
-            // Also check legacy
+            // Source 1: Subcollection "linked_kids" (Robust, No Index needed)
+            const linkedSnap = await getDocs(collection(this.db, "users", parentUid, "linked_kids"));
+            const linkedKidIds = linkedSnap.docs.map(d => d.id);
+
+            // Fetch actual kid profiles
+            for (const kidId of linkedKidIds) {
+                const kidSnap = await getDoc(doc(this.db, "users", kidId));
+                if (kidSnap.exists()) {
+                    addKid({ id: kidSnap.id, ...kidSnap.data() });
+                }
+            }
+
+            // Source 2: Legacy 'parentId' field
+            // Useful for kids linked before the update
             const qLegacy = query(collection(this.db, "users"), where("parentId", "==", parentUid));
             const snapLegacy = await getDocs(qLegacy);
+            snapLegacy.forEach(d => addKid({ id: d.id, ...d.data() }));
 
-            const kids = new Map();
-            snap.docs.forEach(d => kids.set(d.id, { id: d.id, ...d.data() }));
-            snapLegacy.docs.forEach(d => kids.set(d.id, { id: d.id, ...d.data() }));
+            // Source 3: Array 'parentIds' (Might fail if no index)
+            // We try this last and catch errors silently
+            try {
+                const qArray = query(collection(this.db, "users"), where("parentIds", "array-contains", parentUid));
+                const snapArray = await getDocs(qArray);
+                snapArray.forEach(d => addKid({ id: d.id, ...d.data() }));
+            } catch (indexErr) {
+                // Ignore index errors, we have fallbacks
+                console.log("Skipping array-contains query (likely missing index)");
+            }
 
-            return Array.from(kids.values());
+            return Array.from(kidsMap.values());
+
         } catch (e) {
             console.error("Error fetching kids:", e);
             return [];
