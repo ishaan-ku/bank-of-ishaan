@@ -325,38 +325,38 @@ function loadParentDashboard() {
 
         kids.forEach(kid => {
             const card = document.createElement('div');
-            card.className = 'glass-card p-6 rounded-2xl hover:shadow-lg transition-all duration-300';
+            card.className = 'bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow';
             card.innerHTML = `
-                <div class="flex items-center gap-4 mb-6">
-                    <img src="${kid.photoURL || 'https://via.placeholder.com/40'}" class="w-14 h-14 rounded-full bg-white shadow-sm object-cover border-2 border-white">
+                <div class="flex items-center gap-4 mb-4">
+                    <img src="${kid.photoURL || 'https://via.placeholder.com/40'}" class="w-12 h-12 rounded-full bg-slate-100">
                     <div>
-                        <h4 class="font-bold text-xl text-slate-800">${kid.displayName}</h4>
-                        <p class="text-sm text-slate-500 font-medium">${kid.email}</p>
+                        <h4 class="font-bold text-lg text-slate-800">${kid.displayName}</h4>
+                        <p class="text-sm text-slate-500">${kid.email}</p>
                     </div>
                 </div>
-                <div class="mb-6 grid grid-cols-2 gap-4">
-                    <div class="bg-brand-50/50 p-4 rounded-2xl border border-brand-100">
-                        <p class="text-xs text-brand-400 uppercase tracking-wider font-bold mb-1">Checking</p>
-                        <p class="text-2xl font-bold text-brand-700" id="bal-${kid.id}">$${(kid.balance || 0).toFixed(2)}</p>
+                <div class="mb-4 grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Checking</p>
+                        <p class="text-xl font-bold text-slate-900" id="bal-${kid.id}">$${(kid.balance || 0).toFixed(2)}</p>
                     </div>
-                    <div class="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
-                        <p class="text-xs text-emerald-500 uppercase tracking-wider font-bold mb-1">Savings</p>
-                        <p class="text-2xl font-bold text-emerald-700" id="sav-${kid.id}">$${(kid.savingsBalance || 0).toFixed(2)}</p>
+                    <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                        <p class="text-xs text-emerald-600 uppercase tracking-wider font-bold">Savings</p>
+                        <p class="text-xl font-bold text-emerald-700" id="sav-${kid.id}">$${(kid.savingsBalance || 0).toFixed(2)}</p>
                     </div>
                 </div>
                 
-                <div class="mb-6">
-                     <p class="text-xs text-slate-400 uppercase tracking-wider font-bold mb-3">Recent Activity</p>
+                <div class="mb-4">
+                     <p class="text-xs text-slate-400 uppercase tracking-wider font-bold mb-2">Recent Activity</p>
                      <ul class="text-sm space-y-2" id="tx-list-${kid.id}">
                         <li class="text-slate-400 italic text-xs">Loading...</li>
                      </ul>
                 </div>
-                <div class="flex gap-2 mb-3">
-                    <button class="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-2.5 rounded-xl font-medium transition-all shadow-md shadow-brand-500/20 btn-add-money" data-id="${kid.id}">Add</button>
-                    <button class="flex-1 bg-white hover:bg-red-50 text-red-600 border border-red-100 py-2.5 rounded-xl font-medium transition-colors btn-sub-money" data-id="${kid.id}">Subtract</button>
+                <div class="flex gap-2 mb-2">
+                    <button class="flex-1 bg-brand-500 hover:bg-brand-600 text-white py-2 rounded-xl font-medium transition-colors btn-add-money" data-id="${kid.id}">Add</button>
+                    <button class="flex-1 bg-red-100 hover:bg-red-200 text-red-600 py-2 rounded-xl font-medium transition-colors btn-sub-money" data-id="${kid.id}">Subtract</button>
                 </div>
                 <div class="flex gap-2">
-                     <button class="flex-1 px-4 py-2 text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl font-medium transition-colors btn-set-allowance" data-id="${kid.id}">Allowance</button>
+                     <button class="flex-1 px-4 py-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl font-medium transition-colors btn-set-allowance" data-id="${kid.id}">Allowance</button>
                      <button class="flex-1 px-4 py-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl font-medium transition-colors btn-set-interest" data-id="${kid.id}">Interest</button>
                 </div>
             `;
@@ -377,7 +377,7 @@ function loadParentDashboard() {
                 if (!listEl) return;
 
                 if (txs.length === 0) {
-                    listEl.innerHTML = '<li class="text-slate-400 italic text-xs text-center py-2">No activity yet.</li>';
+                    listEl.innerHTML = '<li class="text-slate-400 italic text-xs">No activity yet.</li>';
                     return;
                 }
 
@@ -388,13 +388,13 @@ function loadParentDashboard() {
                     const date = tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleDateString() : '';
 
                     const li = document.createElement('li');
-                    li.className = 'flex justify-between items-center bg-white/60 p-2.5 rounded-xl border border-slate-50';
+                    li.className = 'flex justify-between items-center bg-slate-50 p-2 rounded-lg';
                     li.innerHTML = `
                         <div class="truncate mr-2">
-                            <p class="font-medium text-slate-700 truncate text-xs" title="${tx.description}">${tx.description}</p>
+                            <p class="font-medium text-slate-700 truncate" title="${tx.description}">${tx.description}</p>
                             <p class="text-[10px] text-slate-400">${date}</p>
                         </div>
-                        <span class="font-bold whitespace-nowrap text-xs ${isPos ? 'text-emerald-600' : 'text-slate-600'}">
+                        <span class="font-bold whitespace-nowrap ${isPos ? 'text-green-600' : 'text-slate-600'}">
                             ${isPos ? '+' : ''}$${Math.abs(tx.amount).toFixed(2)}
                         </span>
                     `;
@@ -563,20 +563,21 @@ function loadKidDashboard() {
             const isPos = tx.amount > 0;
 
             const item = document.createElement('li');
-            item.className = 'p-6 flex justify-between items-center hover:bg-slate-50/50 transition-colors border-b border-slate-100/50 last:border-0';
+            item.className = 'p-4 flex justify-between items-center hover:bg-slate-50 transition-colors';
             item.innerHTML = `
-                <div class="flex items-center gap-4">
-                    <div class="p-3 rounded-2xl ${isPos ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg ${isPos ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isPos ? 'M12 4v16m8-8H4' : 'M20 12H4'}" /> 
+                             <!-- Simplistic icons -->
                         </svg>
                     </div>
                     <div>
-                        <p class="font-bold text-slate-800 text-lg">${tx.description}</p>
-                        <p class="text-xs text-slate-400 font-medium">${date}</p>
+                        <p class="font-medium text-slate-800">${tx.description}</p>
+                        <p class="text-xs text-slate-400">${date}</p>
                     </div>
                 </div>
-                <span class="font-bold text-lg ${isPos ? 'text-emerald-600' : 'text-slate-800'}">
+                <span class="font-bold ${isPos ? 'text-green-600' : 'text-slate-900'}">
                     ${isPos ? '+' : ''}$${Math.abs(tx.amount).toFixed(2)}
                 </span>
             `;
