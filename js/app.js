@@ -215,6 +215,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Transfer Modal Logic
+    const transferModal = document.getElementById('modal-transfer');
+    window.closeTransferModal = () => transferModal.classList.add('hidden');
+
+    document.getElementById('form-transfer').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fromId = document.getElementById('modal-transfer-from-id').value;
+        const email = document.getElementById('input-transfer-email').value;
+        const amount = parseFloat(document.getElementById('input-transfer-amount').value);
+        const desc = document.getElementById('input-transfer-desc').value;
+
+        if (fromId && email && amount) {
+            try {
+                await DB.transferMoney(fromId, email, amount, desc);
+                alert(`Sent $${amount.toFixed(2)} to ${email}!`);
+                closeTransferModal();
+                document.getElementById('form-transfer').reset();
+            } catch (err) {
+                alert(err.message);
+                console.error(err);
+            }
+        }
+    });
+
     // Start Auth
     Auth.init(handleUserChange);
 });
@@ -276,9 +300,16 @@ function loadParentDashboard() {
                         <p class="text-sm text-slate-500">${kid.email}</p>
                     </div>
                 </div>
-                <div class="mb-6">
+                <div class="mb-4">
                     <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Current Balance</p>
                     <p class="text-3xl font-bold text-slate-900 balance-display" id="bal-${kid.id}">$${(kid.balance || 0).toFixed(2)}</p>
+                </div>
+                
+                <div class="mb-4">
+                     <p class="text-xs text-slate-400 uppercase tracking-wider font-bold mb-2">Recent Activity</p>
+                     <ul class="text-sm space-y-2" id="tx-list-${kid.id}">
+                        <li class="text-slate-400 italic text-xs">Loading...</li>
+                     </ul>
                 </div>
                 <div class="flex gap-2 mb-2">
                     <button class="flex-1 bg-brand-500 hover:bg-brand-600 text-white py-2 rounded-xl font-medium transition-colors btn-add-money" data-id="${kid.id}">Add</button>
@@ -297,6 +328,38 @@ function loadParentDashboard() {
                 if (el) el.innerText = `$${(updatedKid.balance || 0).toFixed(2)}`;
             });
             unsubscribes.push(unsub);
+
+            // Subscribe to recent transactions (limit 3 for compact view)
+            const unsubTx = DB.subscribeToTransactions(kid.id, (txs) => {
+                const listEl = document.getElementById(`tx-list-${kid.id}`);
+                if (!listEl) return;
+
+                if (txs.length === 0) {
+                    listEl.innerHTML = '<li class="text-slate-400 italic text-xs">No activity yet.</li>';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                // Take top 3
+                txs.slice(0, 3).forEach(tx => {
+                    const isPos = tx.amount > 0;
+                    const date = tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleDateString() : '';
+
+                    const li = document.createElement('li');
+                    li.className = 'flex justify-between items-center bg-slate-50 p-2 rounded-lg';
+                    li.innerHTML = `
+                        <div class="truncate mr-2">
+                            <p class="font-medium text-slate-700 truncate" title="${tx.description}">${tx.description}</p>
+                            <p class="text-[10px] text-slate-400">${date}</p>
+                        </div>
+                        <span class="font-bold whitespace-nowrap ${isPos ? 'text-green-600' : 'text-slate-600'}">
+                            ${isPos ? '+' : ''}$${Math.abs(tx.amount).toFixed(2)}
+                        </span>
+                    `;
+                    listEl.appendChild(li);
+                });
+            });
+            unsubscribes.push(unsubTx);
 
             // Button Listeners
             card.querySelector('.btn-add-money').addEventListener('click', () => {
@@ -371,6 +434,29 @@ function loadKidDashboard() {
         document.getElementById('btn-confirm-transaction').classList.add('bg-red-600', 'hover:bg-red-700');
         document.getElementById('btn-confirm-transaction').innerText = "Spend";
     };
+
+    // Send Money Button (New)
+    // We need to add the button to the DOM first if it doesn't exist.
+    // Let's assume we modify index.html OR inject it here.
+    // Easier to inject it into the 'Quick Actions' card if we can identify it.
+    // Index.html has key IDs. Let's look at kid view HTML structure in my head...
+    // It has a 'grid-cols-2 gap-4' for buttons.
+    // Let's find the Actions section.
+
+    // Actually, let's verify if I added the button to index.html in the previous tool call?
+    // I did NOT add the button to index.html's Kid View, only the Modal.
+    // I need to add the button to the Kid UI.
+    // I'll do it via innerHTML injection for now or modify index.html in next step.
+    // Let's modify index.html in next step for the button.
+    // For now, I'll add the listener assuming ID 'btn-kid-transfer' exists.
+
+    const btnTransfer = document.getElementById('btn-kid-transfer');
+    if (btnTransfer) {
+        btnTransfer.onclick = () => {
+            document.getElementById('modal-transfer').classList.remove('hidden');
+            document.getElementById('modal-transfer-from-id').value = currentUser.uid;
+        };
+    }
 
     // Transactions
     const list = document.getElementById('kid-transactions-list');

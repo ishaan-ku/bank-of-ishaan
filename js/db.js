@@ -86,6 +86,56 @@ const DB = {
         });
     },
 
+    // Transfer money between kids
+    async transferMoney(fromKidUid, toEmail, amount, desc) {
+        const { doc, runTransaction, collection, serverTimestamp, increment } = window.firebaseModules;
+
+        // 1. Find recipient
+        const toKid = await this.findKidByEmail(toEmail);
+        if (!toKid) throw new Error("Recipient email not found. Make sure they have a Kid account.");
+        if (toKid.uid === fromKidUid) throw new Error("You cannot send money to yourself!");
+
+        // 2. Run transaction
+        await runTransaction(this.db, async (transaction) => {
+            const fromRef = doc(this.db, "users", fromKidUid);
+            const toRef = doc(this.db, "users", toKid.uid);
+
+            const fromDoc = await transaction.get(fromRef);
+            if (!fromDoc.exists()) throw new Error("Sender not found");
+
+            const currentBal = fromDoc.data().balance || 0;
+            if (currentBal < amount) {
+                throw new Error("Insufficient funds");
+            }
+
+            // Deduct
+            transaction.update(fromRef, { balance: increment(-amount) });
+            // Add
+            transaction.update(toRef, { balance: increment(amount) });
+
+            // Record Transactions
+            const txCol = collection(this.db, "transactions");
+            const newTxFromRef = doc(txCol);
+            const newTxToRef = doc(txCol);
+
+            transaction.set(newTxFromRef, {
+                kidId: fromKidUid,
+                amount: -amount,
+                description: `Sent to ${toKid.displayName || toEmail}: ${desc}`,
+                timestamp: serverTimestamp(),
+                relatedUserId: toKid.uid
+            });
+
+            transaction.set(newTxToRef, {
+                kidId: toKid.uid,
+                amount: amount,
+                description: `Received from ${fromDoc.data().displayName || 'Friend'}: ${desc}`,
+                timestamp: serverTimestamp(),
+                relatedUserId: fromKidUid
+            });
+        });
+    },
+
     // Get kids linked to this parent
     async getKids(parentUid) {
         const { collection, query, where, getDocs, doc, getDoc } = window.firebaseModules;
