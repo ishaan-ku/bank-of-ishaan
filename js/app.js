@@ -67,11 +67,11 @@ async function checkAllowance(kidData) {
     }
 }
 
-// Interest Logic (5% APY)
+// Interest Logic (Custom or 5% APY)
 async function checkInterest(kidData) {
     if (!kidData.balance || kidData.balance <= 0) return;
 
-    const APY = 0.05;
+    const APY = kidData.interestRate ? parseFloat(kidData.interestRate) : 0.05;
     const MONTHLY_RATE = APY / 12;
     const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -155,7 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const kidId = document.getElementById('modal-kid-id').value;
         let amount = parseFloat(document.getElementById('input-amount').value);
-        const desc = document.getElementById('input-description').value;
+        let desc = document.getElementById('input-description').value;
+
+        if (!desc) desc = "Transfer"; // Default description
 
         // Determine transaction type
         const typeEl = document.getElementById('modal-transaction-type');
@@ -165,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             amount = -Math.abs(amount);
         }
 
-        if (amount && desc) {
+        if (amount) {
             await DB.updateBalance(kidId, amount, desc);
             closeModal();
             document.getElementById('form-transaction').reset();
@@ -189,6 +191,27 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             alert("Allowance updated!");
             closeAllowanceModal();
+        }
+    });
+
+    // Interest Modal Logic
+    const interestModal = document.getElementById('modal-interest');
+    window.closeInterestModal = () => interestModal.classList.add('hidden');
+
+    document.getElementById('form-interest').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const kidId = document.getElementById('modal-interest-kid-id').value;
+        const ratePercent = document.getElementById('input-interest-rate').value;
+
+        if (kidId && ratePercent !== null) {
+            const { doc, updateDoc } = window.firebaseModules;
+            const decimalRate = parseFloat(ratePercent) / 100;
+
+            await updateDoc(doc(window.db, "users", kidId), {
+                interestRate: decimalRate
+            });
+            alert(`Interest rate updated to ${ratePercent}% APY!`);
+            closeInterestModal();
         }
     });
 
@@ -257,10 +280,13 @@ function loadParentDashboard() {
                     <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Current Balance</p>
                     <p class="text-3xl font-bold text-slate-900 balance-display" id="bal-${kid.id}">$${(kid.balance || 0).toFixed(2)}</p>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2 mb-2">
                     <button class="flex-1 bg-brand-500 hover:bg-brand-600 text-white py-2 rounded-xl font-medium transition-colors btn-add-money" data-id="${kid.id}">Add</button>
                     <button class="flex-1 bg-red-100 hover:bg-red-200 text-red-600 py-2 rounded-xl font-medium transition-colors btn-sub-money" data-id="${kid.id}">Subtract</button>
-                    <button class="px-4 py-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl font-medium transition-colors btn-set-allowance" data-id="${kid.id}">Allowance</button>
+                </div>
+                <div class="flex gap-2">
+                     <button class="flex-1 px-4 py-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl font-medium transition-colors btn-set-allowance" data-id="${kid.id}">Allowance</button>
+                     <button class="flex-1 px-4 py-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl font-medium transition-colors btn-set-interest" data-id="${kid.id}">Interest</button>
                 </div>
             `;
             list.appendChild(card);
@@ -297,6 +323,14 @@ function loadParentDashboard() {
                 document.getElementById('modal-allowance').classList.remove('hidden');
                 document.getElementById('modal-allowance-kid-id').value = kid.id;
                 document.getElementById('input-allowance-amount').value = kid.allowance || 0;
+            });
+
+            card.querySelector('.btn-set-interest').addEventListener('click', () => {
+                document.getElementById('modal-interest').classList.remove('hidden');
+                document.getElementById('modal-interest-kid-id').value = kid.id;
+                // Default to 5 or current
+                const currentRate = (kid.interestRate !== undefined) ? (kid.interestRate * 100).toFixed(2) : "5.00";
+                document.getElementById('input-interest-rate').value = currentRate;
             });
         });
     });

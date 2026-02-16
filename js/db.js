@@ -51,11 +51,9 @@ const DB = {
 
     async linkKidToParent(parentUid, kidUid) {
         const { doc, updateDoc, arrayUnion } = window.firebaseModules;
-        // Add kid UID to parent's 'kids' array - wait, arrayUnion is not imported in index.html, let's just use manual array update or simple subcollection
-        // Let's use a 'relationships' collection or just put parentId on kid?
-        // Let's put parentId on Kid. One kid, one parent for now (or array of parents).
         await updateDoc(doc(this.db, "users", kidUid), {
-            parentId: parentUid // Simple 1:1 or 1:Many link
+            parentIds: arrayUnion(parentUid),
+            parentId: parentUid // Keep for backward compat if needed, but array is primary now
         });
     },
 
@@ -80,10 +78,37 @@ const DB = {
     // Get kids linked to this parent
     async getKids(parentUid) {
         const { collection, query, where, getDocs } = window.firebaseModules;
-        // Find kids who have this parentId
-        const q = query(collection(this.db, "users"), where("parentId", "==", parentUid));
-        const snap = await getDocs(q);
-        return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Try to query by array (new way)
+        // If security rules or index issues arise, we might need a fallback, 
+        // but for this "No-Build" prototype, we assume we can query.
+        // Note: array-contains requires an index sometimes, but usually works for basic fields.
+
+        // Strategy: Query for 'parentIds' array-contains parentUid.
+        // Fallback: Query for 'parentId' == parentUid (legacy).
+
+        // We can't do OR queries easily without complex setup.
+        // Let's just do two queries and merge client side if necessary, 
+        // OR just migrate everyone to have parentIds. 
+        // Since we update parentId AND parentIds on link, let's try to query both?
+        // Actually, let's just use the array query. If it fails, we catch.
+
+        try {
+            const q = query(collection(this.db, "users"), where("parentIds", "array-contains", parentUid));
+            const snap = await getDocs(q);
+            // Also check legacy
+            const qLegacy = query(collection(this.db, "users"), where("parentId", "==", parentUid));
+            const snapLegacy = await getDocs(qLegacy);
+
+            const kids = new Map();
+            snap.docs.forEach(d => kids.set(d.id, { id: d.id, ...d.data() }));
+            snapLegacy.docs.forEach(d => kids.set(d.id, { id: d.id, ...d.data() }));
+
+            return Array.from(kids.values());
+        } catch (e) {
+            console.error("Error fetching kids:", e);
+            return [];
+        }
     },
 
     // Realtime listener for a kid's profile (balance)
