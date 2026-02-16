@@ -268,26 +268,61 @@
 
         <!-- KID DASHBOARD VIEW -->
         <div id="view-kid" class="hidden space-y-6">
-            <!-- Balance Card -->
-            <div
-                class="bg-gradient-to-br from-brand-500 to-brand-600 rounded-3xl p-8 text-white shadow-xl shadow-brand-500/30 transform hover:scale-[1.01] transition-transform cursor-default">
-                <p class="text-brand-100 font-medium mb-1">Current Balance</p>
-                <h2 class="text-5xl sm:text-7xl font-bold tracking-tighter" id="kid-balance-display">$0.00</h2>
-                <div class="mt-8 flex gap-4">
-                    <div class="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg border border-white/20">
-                        <p class="text-xs text-brand-100 uppercase tracking-wider font-semibold">Allowance</p>
-                        <p class="font-bold text-lg" id="kid-allowance-display">$0/week</p>
+            <!-- Accounts Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <!-- Checking Account -->
+                <div
+                    class="bg-gradient-to-br from-brand-500 to-brand-600 rounded-3xl p-8 text-white shadow-xl shadow-brand-500/30 transform hover:scale-[1.01] transition-transform">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-brand-100 font-medium mb-1">Checking Account</p>
+                            <h2 class="text-4xl font-bold tracking-tighter" id="kid-balance-display">$0.00</h2>
+                        </div>
+                        <div class="bg-white/20 p-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                            </svg>
+                        </div>
                     </div>
+
                     <div class="flex gap-2">
                         <button id="btn-kid-spend"
-                            class="flex-1 bg-white text-brand-600 px-4 py-3 rounded-xl font-bold shadow-lg hover:bg-brand-50 transition-colors text-sm">
+                            class="flex-1 bg-white text-brand-600 px-3 py-2 rounded-xl font-bold shadow-sm hover:bg-brand-50 transition-colors text-sm">
                             Spend
                         </button>
                         <button id="btn-kid-transfer"
-                            class="flex-1 bg-blue-500 text-white px-4 py-3 rounded-xl font-bold shadow-lg hover:bg-blue-600 transition-colors text-sm">
-                            Send to Friend
+                            class="flex-1 bg-brand-700 text-white border border-brand-400/30 px-3 py-2 rounded-xl font-bold shadow-sm hover:bg-brand-800 transition-colors text-sm">
+                            Send
                         </button>
                     </div>
+                </div>
+
+                <!-- Savings Account -->
+                <div
+                    class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-3xl p-8 text-white shadow-xl shadow-emerald-500/30 transform hover:scale-[1.01] transition-transform">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-emerald-100 font-medium mb-1">Savings Account</p>
+                            <h2 class="text-4xl font-bold tracking-tighter" id="kid-savings-display">$0.00</h2>
+                        </div>
+                        <div class="bg-white/20 p-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <p class="text-xs text-emerald-100 uppercase tracking-wider font-semibold">Interest Rate</p>
+                        <p class="font-bold text-lg" id="kid-interest-rate-display">5.0% APY</p>
+                    </div>
+                    <button id="btn-kid-internal-transfer"
+                        class="w-full bg-white text-emerald-600 px-4 py-2 rounded-xl font-bold shadow-sm hover:bg-emerald-50 transition-colors text-sm">
+                        Move Money
+                    </button>
                 </div>
             </div>
 
@@ -314,6 +349,16 @@
                 <input type="hidden" id="modal-kid-id">
                 <input type="hidden" id="modal-transaction-type" value="add">
                 <div class="space-y-4">
+                    <!-- Account Selector -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Account</label>
+                        <select id="modal-transaction-account"
+                            class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500 outline-none bg-white">
+                            <option value="checking">Checking Account</option>
+                            <option value="savings">Savings Account</option>
+                        </select>
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
                         <div class="relative">
@@ -464,6 +509,62 @@
                             class="flex-1 px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors">Cancel</button>
                         <button type="submit"
                             class="flex-1 px-4 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-colors">Send</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Move Money Modal (Internal) -->
+    <div id="modal-move-money"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
+            <div class="bg-emerald-50 p-6 border-b border-emerald-100">
+                <h3 class="text-xl font-bold text-emerald-900">Move Money</h3>
+                <p class="text-emerald-600 text-sm mt-1">Transfer between Checking and Savings</p>
+            </div>
+            <form id="form-move-money" class="p-6">
+                <input type="hidden" id="modal-move-money-kid-id">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">From</label>
+                            <select id="input-move-from"
+                                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+                                <option value="checking">Checking</option>
+                                <option value="savings">Savings</option>
+                            </select>
+                        </div>
+                        <div class="pt-6 text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">To</label>
+                            <input type="text" id="input-move-to"
+                                class="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
+                                value="Savings" readonly>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Amount</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3.5 text-slate-400">$</span>
+                            <input type="number" id="input-move-amount" step="0.01" min="0.01"
+                                class="w-full pl-8 pr-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                                placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-2">
+                        <button type="button" onclick="closeMoveMoneyModal()"
+                            class="flex-1 px-4 py-2 text-slate-600 font-medium hover:bg-slate-50 rounded-xl transition-colors">Cancel</button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-500/20 transition-colors">Move</button>
                     </div>
                 </div>
             </form>

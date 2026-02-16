@@ -27,7 +27,7 @@ const DB = {
             role: role,
             createdAt: serverTimestamp(),
             // Initialize balance/allowance only if kid
-            ...(role === 'kid' ? { balance: 0, allowance: 0 } : {})
+            ...(role === 'kid' ? { balance: 0, savingsBalance: 0, allowance: 0 } : {})
         }, { merge: true });
     },
 
@@ -69,20 +69,63 @@ const DB = {
     },
 
     // Update balance
-    async updateBalance(kidUid, amount, description) {
+    async updateBalance(kidUid, amount, description, accountType = 'checking') {
         const { doc, updateDoc, addDoc, collection, serverTimestamp, increment } = window.firebaseModules;
+
+        const balanceField = accountType === 'savings' ? 'savingsBalance' : 'balance';
+        const accountName = accountType === 'savings' ? 'Savings' : 'Checking';
 
         // Add transaction
         await addDoc(collection(this.db, "transactions"), {
             kidId: kidUid,
             amount: parseFloat(amount), // can be negative
-            description: description,
-            timestamp: serverTimestamp()
+            description: `${description} (${accountName})`,
+            timestamp: serverTimestamp(),
+            accountType: accountType
         });
 
         // Update balance
         await updateDoc(doc(this.db, "users", kidUid), {
-            balance: increment(parseFloat(amount))
+            [balanceField]: increment(parseFloat(amount))
+        });
+    },
+
+    // Internal Transfer (Checking <-> Savings)
+    async transferInternal(kidUid, fromType, toType, amount) {
+        const { doc, runTransaction, collection, serverTimestamp, increment } = window.firebaseModules;
+
+        await runTransaction(this.db, async (transaction) => {
+            const userRef = doc(this.db, "users", kidUid);
+            const userDoc = await transaction.get(userRef);
+
+            if (!userDoc.exists()) throw new Error("User not found");
+
+            const fromField = fromType === 'savings' ? 'savingsBalance' : 'balance';
+            const toField = toType === 'savings' ? 'savingsBalance' : 'balance';
+
+            const currentBal = userDoc.data()[fromField] || 0;
+            if (currentBal < amount) {
+                throw new Error(`Insufficient funds in ${fromType}`);
+            }
+
+            transaction.update(userRef, {
+                [fromField]: increment(-amount),
+                [toField]: increment(amount)
+            });
+
+            // Record Transaction
+            const txCol = collection(this.db, "transactions");
+            const newTxRef = doc(txCol);
+
+            transaction.set(newTxRef, {
+                kidId: kidUid,
+                amount: 0, // Net change to total wealth is 0, or we could log individual interactions. 
+                // Let's log it as a generic 'info' transaction or two entries?
+                // For simplicity in the log list: "Transferred $X to Savings"
+                description: `Transferred $${amount} from ${fromType} to ${toType}`,
+                timestamp: serverTimestamp(),
+                type: 'transfer_internal'
+            });
         });
     },
 

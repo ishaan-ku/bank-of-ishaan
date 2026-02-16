@@ -300,9 +300,15 @@ function loadParentDashboard() {
                         <p class="text-sm text-slate-500">${kid.email}</p>
                     </div>
                 </div>
-                <div class="mb-4">
-                    <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Current Balance</p>
-                    <p class="text-3xl font-bold text-slate-900 balance-display" id="bal-${kid.id}">$${(kid.balance || 0).toFixed(2)}</p>
+                <div class="mb-4 grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">Checking</p>
+                        <p class="text-xl font-bold text-slate-900" id="bal-${kid.id}">$${(kid.balance || 0).toFixed(2)}</p>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                        <p class="text-xs text-emerald-600 uppercase tracking-wider font-bold">Savings</p>
+                        <p class="text-xl font-bold text-emerald-700" id="sav-${kid.id}">$${(kid.savingsBalance || 0).toFixed(2)}</p>
+                    </div>
                 </div>
                 
                 <div class="mb-4">
@@ -325,7 +331,9 @@ function loadParentDashboard() {
             // Subscribe to realtime balance
             const unsub = DB.subscribeToKid(kid.id, (updatedKid) => {
                 const el = document.getElementById(`bal-${kid.id}`);
+                const elSav = document.getElementById(`sav-${kid.id}`);
                 if (el) el.innerText = `$${(updatedKid.balance || 0).toFixed(2)}`;
+                if (elSav) elSav.innerText = `$${(updatedKid.savingsBalance || 0).toFixed(2)}`;
             });
             unsubscribes.push(unsub);
 
@@ -367,6 +375,10 @@ function loadParentDashboard() {
                 document.getElementById('modal-kid-id').value = kid.id;
                 document.getElementById('modal-transaction-type').value = 'add';
                 document.getElementById('modal-transaction-title').innerText = `Add Money to ${kid.displayName}`;
+
+                // Show account selector
+                document.getElementById('modal-transaction-account').closest('div').classList.remove('hidden');
+
                 document.getElementById('btn-confirm-transaction').classList.remove('bg-red-600', 'hover:bg-red-700');
                 document.getElementById('btn-confirm-transaction').classList.add('bg-brand-600', 'hover:bg-brand-700');
                 document.getElementById('btn-confirm-transaction').innerText = "Add Money";
@@ -377,6 +389,10 @@ function loadParentDashboard() {
                 document.getElementById('modal-kid-id').value = kid.id;
                 document.getElementById('modal-transaction-type').value = 'subtract';
                 document.getElementById('modal-transaction-title').innerText = `Subtract from ${kid.displayName}`;
+
+                // Show account selector
+                document.getElementById('modal-transaction-account').closest('div').classList.remove('hidden');
+
                 document.getElementById('btn-confirm-transaction').classList.remove('bg-brand-600', 'hover:bg-brand-700');
                 document.getElementById('btn-confirm-transaction').classList.add('bg-red-600', 'hover:bg-red-700');
                 document.getElementById('btn-confirm-transaction').innerText = "Take Away";
@@ -404,7 +420,8 @@ function loadKidDashboard() {
     clearListeners();
     // Balance
     const balDisplay = document.getElementById('kid-balance-display');
-    const allowDisplay = document.getElementById('kid-allowance-display');
+    const savDisplay = document.getElementById('kid-savings-display');
+    const rateDisplay = document.getElementById('kid-interest-rate-display');
 
     // Initial fetch to check allowance
     let hasCheckedAllowance = false;
@@ -412,7 +429,11 @@ function loadKidDashboard() {
     // Use subscribe for live updates
     const unsubKid = DB.subscribeToKid(currentUser.uid, (kid) => {
         balDisplay.innerText = `$${(kid.balance || 0).toFixed(2)}`;
-        allowDisplay.innerText = `$${(kid.allowance || 0).toFixed(2)}/week`; // If we had allowance setting
+        if (savDisplay) savDisplay.innerText = `$${(kid.savingsBalance || 0).toFixed(2)}`;
+
+        // Update Interest Rate Display
+        const APY = kid.interestRate ? parseFloat(kid.interestRate) : 0.05;
+        if (rateDisplay) rateDisplay.innerText = `${(APY * 100).toFixed(1)}% APY`;
 
         // Check allowance (only once per session to avoid loops)
         if (!hasCheckedAllowance) {
