@@ -67,6 +67,51 @@ async function checkAllowance(kidData) {
     }
 }
 
+// Interest Logic (5% APY)
+async function checkInterest(kidData) {
+    if (!kidData.balance || kidData.balance <= 0) return;
+
+    const APY = 0.05;
+    const MONTHLY_RATE = APY / 12;
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+    // For testing: Uncomment this to force interest every 1 minute
+    // const THIRTY_DAYS_MS = 60 * 1000; 
+
+    const now = new Date();
+    const lastDate = kidData.lastInterestDate ? kidData.lastInterestDate.toDate() : null;
+
+    // If never paid, set last interest to now (start clock)
+    if (!lastDate) {
+        const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
+        await updateDoc(doc(window.db, "users", kidData.id), {
+            lastInterestDate: serverTimestamp()
+        });
+        return;
+    }
+
+    if (now.getTime() - lastDate.getTime() > THIRTY_DAYS_MS) {
+        console.log("Triggering Interest...");
+        const interestAmount = kidData.balance * MONTHLY_RATE;
+
+        // Minimum $0.01
+        if (interestAmount < 0.01) return;
+
+        const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
+
+        try {
+            await DB.updateBalance(kidData.id, interestAmount.toFixed(2), "Monthly Interest (5% APY)");
+            await updateDoc(doc(window.db, "users", kidData.id), {
+                lastInterestDate: serverTimestamp()
+            });
+            console.log("Interest paid!");
+            // Optional: User notification toast
+        } catch (e) {
+            console.error("Error paying interest", e);
+        }
+    }
+}
+
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
@@ -275,6 +320,7 @@ function loadKidDashboard() {
         // Check allowance (only once per session to avoid loops)
         if (!hasCheckedAllowance) {
             checkAllowance(kid);
+            checkInterest(kid);
             hasCheckedAllowance = true;
         }
     });

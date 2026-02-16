@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bank of Ishaan</title>
+    <title>FutureVault - Smart Family Banking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -61,14 +61,14 @@
     <nav class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center z-10 hidden"
         id="nav-bar">
         <div class="flex items-center space-x-2">
-            <div class="bg-brand-500 text-white p-2 rounded-lg">
+            <div class="bg-brand-600 text-white p-2 rounded-xl shadow-lg shadow-brand-500/30">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
             </div>
-            <span class="font-bold text-xl tracking-tight text-slate-800">Bank of Ishaan</span>
+            <span class="font-bold text-xl tracking-tight text-slate-900">FutureVault</span>
         </div>
         <div class="flex items-center space-x-4">
             <span id="user-display-name" class="text-sm font-medium text-slate-600 hidden sm:block"></span>
@@ -89,15 +89,16 @@
         <!-- LOGIN VIEW -->
         <div id="view-login" class="hidden h-full flex flex-col items-center justify-center">
             <div class="text-center mb-10">
-                <div class="bg-brand-500 text-white p-4 rounded-2xl inline-block mb-4 shadow-lg shadow-brand-500/30">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24"
+                <div
+                    class="bg-gradient-to-tr from-brand-600 to-indigo-600 text-white p-6 rounded-3xl inline-block mb-6 shadow-xl shadow-brand-500/20 transform hover:scale-105 transition-transform duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                 </div>
-                <h1 class="text-4xl font-extrabold text-slate-900 mb-2">Bank of Ishaan</h1>
-                <p class="text-slate-500 text-lg">Manage allowances and savings easily.</p>
+                <h1 class="text-5xl font-extrabold text-slate-900 mb-3 tracking-tight">FutureVault</h1>
+                <p class="text-slate-500 text-xl font-medium">The bank that grows with you.</p>
             </div>
 
             <button id="btn-login-google"
@@ -111,8 +112,6 @@
                 class="text-slate-400 hover:text-brand-600 font-medium text-sm transition-colors mb-4">
                 Try Test Mode (Simulation)
             </button>
-            <div id="auth-debug-log"
-                class="text-xs text-slate-400 font-mono max-w-sm text-left bg-slate-100 p-2 rounded hidden"></div>
         </div>
 
         <!-- ONBOARDING / ROLE SELECT VIEW -->
