@@ -156,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const kidId = document.getElementById('modal-kid-id').value;
         let amount = parseFloat(document.getElementById('input-amount').value);
         let desc = document.getElementById('input-description').value;
+        const accountType = document.getElementById('modal-transaction-account').value || 'checking';
 
         if (!desc) desc = "Transfer"; // Default description
 
@@ -168,10 +169,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (amount) {
-            await DB.updateBalance(kidId, amount, desc);
+            await DB.updateBalance(kidId, amount, desc, accountType);
             closeModal();
             document.getElementById('form-transaction').reset();
             if (typeEl) typeEl.value = 'add'; // Reset to default
+        }
+    });
+
+    // Move Money Modal Logic
+    const moveMoneyModal = document.getElementById('modal-move-money');
+    window.closeMoveMoneyModal = () => moveMoneyModal.classList.add('hidden');
+
+    // Logic to toggle "To" field based on "From"
+    document.getElementById('input-move-from').addEventListener('change', (e) => {
+        const toField = document.getElementById('input-move-to');
+        toField.value = e.target.value === 'checking' ? 'Savings' : 'Checking';
+    });
+
+    document.getElementById('form-move-money').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const kidId = document.getElementById('modal-move-money-kid-id').value;
+        const fromType = document.getElementById('input-move-from').value;
+        const toType = fromType === 'checking' ? 'savings' : 'checking'; // Opposite
+        const amount = parseFloat(document.getElementById('input-move-amount').value);
+
+        if (kidId && amount) {
+            try {
+                await DB.transferInternal(kidId, fromType, toType, amount);
+                alert(`Moved $${amount.toFixed(2)} to ${toType === 'checking' ? 'Checking' : 'Savings'}!`);
+                closeMoveMoneyModal();
+                document.getElementById('form-move-money').reset();
+            } catch (err) {
+                alert(err.message);
+            }
         }
     });
 
@@ -450,11 +480,25 @@ function loadKidDashboard() {
         document.getElementById('modal-kid-id').value = currentUser.uid;
         document.getElementById('modal-transaction-type').value = 'subtract';
         document.getElementById('modal-transaction-title').innerText = `Spend Money`;
+        document.getElementById('modal-transaction-account').value = 'checking'; // Default to checking
         document.getElementById('input-description').placeholder = "What did you buy?";
+
+        // Simplified: Kid spends from Checking. 
+        document.getElementById('modal-transaction-account').closest('div').classList.add('hidden'); // Hide selector for kids spend
+
         document.getElementById('btn-confirm-transaction').classList.remove('bg-brand-600', 'hover:bg-brand-700');
         document.getElementById('btn-confirm-transaction').classList.add('bg-red-600', 'hover:bg-red-700');
         document.getElementById('btn-confirm-transaction').innerText = "Spend";
     };
+
+    // Move Money Button (Internal)
+    const btnMove = document.getElementById('btn-kid-internal-transfer');
+    if (btnMove) {
+        btnMove.onclick = () => {
+            document.getElementById('modal-move-money').classList.remove('hidden');
+            document.getElementById('modal-move-money-kid-id').value = currentUser.uid;
+        };
+    }
 
     // Send Money Button (New)
     // We need to add the button to the DOM first if it doesn't exist.
