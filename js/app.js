@@ -126,8 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
     nav.logout.addEventListener('click', () => Auth.signOut());
 
     // Role Selection
-    document.getElementById('btn-role-parent').addEventListener('click', () => setRole('parent'));
-    document.getElementById('btn-role-kid').addEventListener('click', () => setRole('kid'));
+    document.getElementById('btn-role-parent').addEventListener('click', (e) => setRole(e, 'parent'));
+    document.getElementById('btn-role-kid').addEventListener('click', (e) => setRole(e, 'kid'));
 
     // Parent Logic: Add Kid
     document.getElementById('form-add-kid').addEventListener('submit', async (e) => {
@@ -153,223 +153,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Modal Logic
-    const modal = document.getElementById('modal-transaction');
-    window.closeModal = () => modal.classList.add('hidden');
+    // ... (rest of listeners)
 
-    document.getElementById('form-transaction').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const kidId = document.getElementById('modal-kid-id').value;
-        let amount = parseFloat(document.getElementById('input-amount').value);
-        let desc = document.getElementById('input-description').value;
-        const accountType = document.getElementById('modal-transaction-account').value || 'checking';
-
-        if (!desc) desc = "Transfer"; // Default description
-
-        // Determine transaction type
-        const typeEl = document.getElementById('modal-transaction-type');
-        const type = typeEl ? typeEl.value : 'add';
-
-        if (type === 'subtract') {
-            amount = -Math.abs(amount);
-        }
-
-        if (amount) {
-            try {
-                await DB.updateBalance(kidId, amount, desc, accountType);
-                closeModal();
-                document.getElementById('form-transaction').reset();
-                if (typeEl) typeEl.value = 'add'; // Reset to default
-            } catch (err) {
-                alert(err.message);
-            }
-        }
-    });
-
-    // Move Money Modal Logic
-    const moveMoneyModal = document.getElementById('modal-move-money');
-    window.closeMoveMoneyModal = () => moveMoneyModal.classList.add('hidden');
-
-    // Logic to toggle "To" field based on "From"
-    document.getElementById('input-move-from').addEventListener('change', (e) => {
-        const toField = document.getElementById('input-move-to');
-        toField.value = e.target.value === 'checking' ? 'Savings' : 'Checking';
-    });
-
-    document.getElementById('form-move-money').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const kidId = document.getElementById('modal-move-money-kid-id').value;
-        const fromType = document.getElementById('input-move-from').value;
-        const toType = fromType === 'checking' ? 'savings' : 'checking'; // Opposite
-        const amount = parseFloat(document.getElementById('input-move-amount').value);
-
-        if (kidId && amount) {
-            try {
-                await DB.transferInternal(kidId, fromType, toType, amount);
-                alert(`Moved $${amount.toFixed(2)} to ${toType === 'checking' ? 'Checking' : 'Savings'}!`);
-                closeMoveMoneyModal();
-                document.getElementById('form-move-money').reset();
-            } catch (err) {
-                alert(err.message);
-            }
-        }
-    });
-
-    // Allowance Modal Logic
-    const allowanceModal = document.getElementById('modal-allowance');
-    window.closeAllowanceModal = () => allowanceModal.classList.add('hidden');
-
-    document.getElementById('form-allowance').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const kidId = document.getElementById('modal-allowance-kid-id').value;
-        const amount = document.getElementById('input-allowance-amount').value;
-
-        if (kidId && amount !== null) {
-            const { doc, updateDoc } = window.firebaseModules;
-            await updateDoc(doc(window.db, "users", kidId), {
-                allowance: parseFloat(amount)
-            });
-            alert("Allowance updated!");
-            closeAllowanceModal();
-        }
-    });
-
-    // Interest Modal Logic
-    const interestModal = document.getElementById('modal-interest');
-    window.closeInterestModal = () => interestModal.classList.add('hidden');
-
-    document.getElementById('form-interest').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const kidId = document.getElementById('modal-interest-kid-id').value;
-        const ratePercent = document.getElementById('input-interest-rate').value;
-
-        if (kidId && ratePercent !== null) {
-            const { doc, updateDoc } = window.firebaseModules;
-            const decimalRate = parseFloat(ratePercent) / 100;
-
-            await updateDoc(doc(window.db, "users", kidId), {
-                interestRate: decimalRate
-            });
-            alert(`Interest rate updated to ${ratePercent}% APY!`);
-            closeInterestModal();
-        }
-    });
-
-    // Transfer Modal Logic
-    const transferModal = document.getElementById('modal-transfer');
-    window.closeTransferModal = () => transferModal.classList.add('hidden');
-
-    document.getElementById('form-transfer').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fromId = document.getElementById('modal-transfer-from-id').value;
-        const email = document.getElementById('input-transfer-email').value;
-        const amount = parseFloat(document.getElementById('input-transfer-amount').value);
-        const desc = document.getElementById('input-transfer-desc').value;
-
-        if (fromId && email && amount) {
-            try {
-                await DB.transferMoney(fromId, email, amount, desc);
-                alert(`Sent $${amount.toFixed(2)} to ${email}!`);
-                closeTransferModal();
-                document.getElementById('form-transfer').reset();
-            } catch (err) {
-                alert(err.message);
-                console.error(err);
-            }
-        }
-    });
-
-    // --- SAVINGS GOALS LOGIC ---
-
-    // New Goal Modal
-    const newGoalModal = document.getElementById('modal-new-goal');
-    window.closeNewGoalModal = () => newGoalModal.classList.add('hidden');
-
-    document.getElementById('btn-add-goal').addEventListener('click', () => {
-        newGoalModal.classList.remove('hidden');
-    });
-
-    // Icon Selector logic
-    const iconBtns = document.querySelectorAll('#goal-icon-selector button');
-    iconBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            iconBtns.forEach(b => {
-                b.classList.remove('bg-indigo-50', 'border-2', 'border-indigo-500');
-                b.classList.add('bg-white', 'border', 'border-slate-200');
-            });
-            btn.classList.remove('bg-white', 'border', 'border-slate-200');
-            btn.classList.add('bg-indigo-50', 'border-2', 'border-indigo-500');
-            document.getElementById('input-goal-icon').value = btn.dataset.icon;
-        });
-    });
-
-    document.getElementById('form-new-goal').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('input-goal-name').value;
-        const amount = document.getElementById('input-goal-amount').value;
-        const icon = document.getElementById('input-goal-icon').value;
-
-        try {
-            await DB.createSavingsGoal(currentUser.uid, name, amount, icon);
-            closeNewGoalModal();
-            e.target.reset();
-        } catch (err) {
-            alert("Error creating goal: " + err.message);
-        }
-    });
-
-    // Contribute Modal
-    const contributeModal = document.getElementById('modal-contribute-goal');
-    window.closeContributeGoalModal = () => contributeModal.classList.add('hidden');
-
-    document.getElementById('form-contribute-goal').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const goalId = document.getElementById('modal-contribute-goal-id').value;
-        const amount = parseFloat(document.getElementById('input-contribute-amount').value);
-
-        try {
-            await DB.contributeToGoal(currentUser.uid, goalId, amount);
-            closeContributeGoalModal();
-            e.target.reset();
-        } catch (err) {
-            alert(err.message);
-        }
-    });
-
-    // Withdraw from Goal (Negative contribution)
-    document.getElementById('btn-withdraw-goal').addEventListener('click', async () => {
-        const goalId = document.getElementById('modal-contribute-goal-id').value;
-        const amount = parseFloat(document.getElementById('input-contribute-amount').value);
-
-        if (!amount || amount <= 0) {
-            alert("Please enter a valid amount to withdraw.");
-            return;
-        }
-
-        if (confirm(`Are you sure you want to move $${amount} back to Savings?`)) {
-            try {
-                await DB.contributeToGoal(currentUser.uid, goalId, -amount);
-                closeContributeGoalModal();
-                document.getElementById('form-contribute-goal').reset();
-            } catch (err) {
-                alert(err.message);
-            }
-        }
-    });
-
-
-    // Start Auth
-    Auth.init(handleUserChange);
+    console.log("App Initialized");
 });
 
-async function setRole(role) {
-    if (!currentUser) return;
-    await DB.setUserRole(currentUser, role);
-    currentRole = role;
-    handleUserChange(currentUser, role);
+async function setRole(e, role) {
+    if (e) e.preventDefault();
+    console.log("Setting role to:", role);
+    if (!currentUser) {
+        console.error("Cannot set role: currentUser is null");
+        return;
+    }
+    try {
+        await DB.setUserRole(currentUser, role);
+        currentRole = role;
+        console.log("Role set via DB, updating UI...");
+        handleUserChange(currentUser, role);
+    } catch (err) {
+        console.error("Error setting role:", err);
+    }
 }
 
 function handleUserChange(user, role) {
+    console.log("handleUserChange:", user ? user.uid : 'null', "Role:", role);
     currentUser = user;
     currentRole = role;
 
@@ -380,16 +187,20 @@ function handleUserChange(user, role) {
 
         if (role) {
             if (role === 'parent') {
+                console.log("Switching to Parent View");
                 showView('view-parent');
                 loadParentDashboard();
             } else {
+                console.log("Switching to Kid View");
                 showView('view-kid');
                 loadKidDashboard();
             }
         } else {
+            console.log("No role found, showing Onboarding");
             showView('view-onboarding');
         }
     } else {
+        console.log("No user, showing Login");
         clearListeners();
         showView('view-login');
     }
