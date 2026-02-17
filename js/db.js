@@ -105,11 +105,19 @@ const DB = {
 
     // Update balance
     async updateBalance(kidUid, amount, description, accountType = 'checking') {
-        const { doc, updateDoc, addDoc, collection, serverTimestamp, increment, runTransaction } = window.firebaseModules;
+        const { doc, updateDoc, addDoc, collection, serverTimestamp, increment, runTransaction, getDoc } = window.firebaseModules;
 
         const balanceField = accountType === 'savings' ? 'savingsBalance' : 'balance';
         const accountName = accountType === 'savings' ? 'Savings' : 'Checking';
         const isSpending = parseFloat(amount) < 0;
+
+        // CHECK FROZEN STATUS IF SPENDING
+        if (isSpending) {
+            const userSnap = await getDoc(doc(this.db, "users", kidUid));
+            if (userSnap.exists() && userSnap.data().isCardFrozen) {
+                throw new Error("Card is frozen. Ask your parent to unfreeze it.");
+            }
+        }
 
         // If spending from Savings, check limit
         if (accountType === 'savings' && isSpending) {
@@ -147,6 +155,61 @@ const DB = {
                 [balanceField]: increment(parseFloat(amount))
             });
         }
+    },
+
+    // Toggle Card Freeze
+    async toggleCardFreeze(kidUid, shouldFreeze) {
+        const { doc, updateDoc } = window.firebaseModules;
+        await updateDoc(doc(this.db, "users", kidUid), {
+            isCardFrozen: shouldFreeze
+        });
+    },
+
+    // Toggle Quizzes (Parent Control)
+    async toggleQuizzes(kidUid, enabled) {
+        const { doc, updateDoc } = window.firebaseModules;
+        await updateDoc(doc(this.db, "users", kidUid), {
+            quizzesEnabled: enabled
+        });
+    },
+
+    // Complete Quiz (Reward + Mark as done)
+    async markQuizCompleted(kidUid, quizId, rewardAmount) {
+        const { doc, runTransaction, increment, arrayUnion, serverTimestamp, collection } = window.firebaseModules;
+
+        await runTransaction(this.db, async (transaction) => {
+            const userRef = doc(this.db, "users", kidUid);
+            const userDoc = await transaction.get(userRef);
+
+            if (!userDoc.exists()) throw new Error("User not found");
+            const userData = userDoc.data();
+
+            // Check if already completed
+            if (userData.completedQuizzes && userData.completedQuizzes.includes(quizId)) {
+                throw new Error("You already completed this quiz!");
+            }
+
+            // Check if quizzes are enabled
+            if (userData.quizzesEnabled === false) { // Strict check for false, undefined defaults to true
+                throw new Error("Quizzes are currently disabled by your parent.");
+            }
+
+            // Grant Reward
+            transaction.update(userRef, {
+                balance: increment(rewardAmount),
+                completedQuizzes: arrayUnion(quizId)
+            });
+
+            // Add Transaction Record
+            const newTxRef = doc(collection(this.db, "transactions"));
+            transaction.set(newTxRef, {
+                kidId: kidUid,
+                amount: rewardAmount,
+                description: `Quiz Reward: ${quizId}`,
+                timestamp: serverTimestamp(),
+                accountType: 'checking'
+            });
+        });
     },
 
     // Internal Transfer (Checking <-> Savings)
@@ -319,4 +382,91 @@ const DB = {
             cb(txs);
         });
     }
+},
+
+    // --- SAVINGS GOALS ---
+
+    // Add a new savings goal
+    async createSavingsGoal(kidUid, name, targetAmount, icon = '🎯') {
+        const { collection, addDoc, serverTimestamp } = window.firebaseModules;
+        await addDoc(collection(this.db, "users", kidUid, "goals"), {
+            name,
+            targetAmount: parseFloat(targetAmount),
+            currentAmount: 0,
+            icon,
+            createdAt: serverTimestamp()
+        });
+    },
+
+        // Delete a savings goal (money returns to Savings)
+        async deleteSavingsGoal(kidUid, goalId) {
+    const { doc, getDoc, runTransaction, increment } = window.firebaseModules;
+
+    await runTransaction(this.db, async (transaction) => {
+        const goalRef = doc(this.db, "users", kidUid, "goals", goalId);
+        const goalDoc = await transaction.get(goalRef);
+
+        if (!goalDoc.exists()) throw new Error("Goal not found");
+
+        const amountToReturn = goalDoc.data().currentAmount || 0;
+
+        // Delete goal
+        transaction.delete(goalRef);
+
+        // Return funds to Savings Balance if > 0
+        if (amountToReturn > 0) {
+            const userRef = doc(this.db, "users", kidUid);
+            transaction.update(userRef, {
+                savingsBalance: increment(amountToReturn)
+            });
+        }
+    });
+},
+
+    // Move money from Savings -> Goal (or Goal -> Savings if negative)
+    async contributeToGoal(kidUid, goalId, amount) {
+    const { doc, runTransaction, increment } = window.firebaseModules;
+
+    await runTransaction(this.db, async (transaction) => {
+        const userRef = doc(this.db, "users", kidUid);
+        const goalRef = doc(this.db, "users", kidUid, "goals", goalId);
+
+        const userDoc = await transaction.get(userRef);
+        const goalDoc = await transaction.get(goalRef);
+
+        if (!userDoc.exists()) throw new Error("User not found");
+        if (!goalDoc.exists()) throw new Error("Goal not found");
+
+        const savingsBal = userDoc.data().savingsBalance || 0;
+        const currentGoalAmount = goalDoc.data().currentAmount || 0;
+
+        // Check sufficient funds (Source depends on direction)
+        if (amount > 0) {
+            // Moving Savings -> Goal
+            if (savingsBal < amount) throw new Error("Insufficient savings for this contribution.");
+        } else {
+            // Moving Goal -> Savings (amount is negative)
+            if (currentGoalAmount < Math.abs(amount)) throw new Error("Not enough money in this goal to withdraw.");
+        }
+
+        // Execute Transfer
+        transaction.update(userRef, {
+            savingsBalance: increment(-amount)
+        });
+
+        transaction.update(goalRef, {
+            currentAmount: increment(amount)
+        });
+    });
+},
+
+// Listen to goals
+subscribeToGoals(kidUid, cb) {
+    const { collection, query, orderBy, onSnapshot } = window.firebaseModules;
+    const q = query(collection(this.db, "users", kidUid, "goals"), orderBy("createdAt", "asc"));
+    return onSnapshot(q, (snap) => {
+        const goals = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        cb(goals);
+    });
+}
 };

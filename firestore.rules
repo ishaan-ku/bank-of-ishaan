@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is a parent of the target kid
+    function isParentOf(kidUid) {
+      let kidDoc = get(/databases/$(database)/documents/users/$(kidUid));
+      return kidDoc != null && request.auth.uid in kidDoc.data.parentIds;
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      // Allow users to read/write their own profile
+      // Allow parents to read/write their kid's profile
+      allow read, write: if request.auth != null && (
+        request.auth.uid == userId || 
+        (resource != null && request.auth.uid in resource.data.parentIds)
+      );
+      
+      // Allow creation if the auth ID matches the document ID (e.g. initial sign up)
+      allow create: if request.auth != null && request.auth.uid == userId;
+
+      // Subcollection linked_kids (only used by the parent themselves)
+      match /linked_kids/{kidId} {
+        allow read, write: if request.auth.uid == userId;
+      }
+    }
+
+    // Transactions
+    match /transactions/{txId} {
+      // Allow read if user is the kid involved OR is a parent of the kid
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.kidId || 
+        isParentOf(resource.data.kidId)
+      );
+
+      // Allow create if user is the kid OR is a parent of the kid
+      allow create: if request.auth != null && (
+        request.auth.uid == request.resource.data.kidId ||
+        isParentOf(request.resource.data.kidId)
+      );
+
+      // Prevent modification/deletion of transactions for audit trail (optional, good for security)
+      allow update, delete: if false; 
+    }
+  }
+}

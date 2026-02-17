@@ -17,7 +17,19 @@ const nav = {
 // State
 let currentUser = null;
 let currentRole = null;
+const QUIZ_DATA = [
+    { id: 'q1', question: "What happens to your money in a savings account?", options: ["It disappears", "The bank pays you interest", "It turns into candy"], correct: 1, reward: 0.50 },
+    { id: 'q2', question: "If you save $5 a week for 4 weeks, how much do you have?", options: ["$20", "$10", "$500"], correct: 0, reward: 0.50 },
+    { id: 'q3', question: "What is a 'Budget'?", options: ["A type of bird", "A plan for how to spend your money", "A video game"], correct: 1, reward: 0.50 },
+    { id: 'q4', question: "Why is it good to start saving early?", options: ["To buy a spaceship", "Compound interest makes it grow more", "Banks like it"], correct: 1, reward: 1.00 },
+    { id: 'q5', question: "Which is a 'Need' (not a 'Want')?", options: ["New Video Game", "Designer Shoes", "Healthy Food"], correct: 2, reward: 0.50 }
+];
+
+// State
+let currentUser = null;
+let currentRole = null;
 let unsubscribes = []; // Listeners to clean up
+let currentQuiz = null; // Track active quiz
 
 // Helpers
 function showView(viewId) {
@@ -273,6 +285,85 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- SAVINGS GOALS LOGIC ---
+
+    // New Goal Modal
+    const newGoalModal = document.getElementById('modal-new-goal');
+    window.closeNewGoalModal = () => newGoalModal.classList.add('hidden');
+
+    document.getElementById('btn-add-goal').addEventListener('click', () => {
+        newGoalModal.classList.remove('hidden');
+    });
+
+    // Icon Selector logic
+    const iconBtns = document.querySelectorAll('#goal-icon-selector button');
+    iconBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            iconBtns.forEach(b => {
+                b.classList.remove('bg-indigo-50', 'border-2', 'border-indigo-500');
+                b.classList.add('bg-white', 'border', 'border-slate-200');
+            });
+            btn.classList.remove('bg-white', 'border', 'border-slate-200');
+            btn.classList.add('bg-indigo-50', 'border-2', 'border-indigo-500');
+            document.getElementById('input-goal-icon').value = btn.dataset.icon;
+        });
+    });
+
+    document.getElementById('form-new-goal').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('input-goal-name').value;
+        const amount = document.getElementById('input-goal-amount').value;
+        const icon = document.getElementById('input-goal-icon').value;
+
+        try {
+            await DB.createSavingsGoal(currentUser.uid, name, amount, icon);
+            closeNewGoalModal();
+            e.target.reset();
+        } catch (err) {
+            alert("Error creating goal: " + err.message);
+        }
+    });
+
+    // Contribute Modal
+    const contributeModal = document.getElementById('modal-contribute-goal');
+    window.closeContributeGoalModal = () => contributeModal.classList.add('hidden');
+
+    document.getElementById('form-contribute-goal').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const goalId = document.getElementById('modal-contribute-goal-id').value;
+        const amount = parseFloat(document.getElementById('input-contribute-amount').value);
+
+        try {
+            await DB.contributeToGoal(currentUser.uid, goalId, amount);
+            closeContributeGoalModal();
+            e.target.reset();
+        } catch (err) {
+            alert(err.message);
+        }
+    });
+
+    // Withdraw from Goal (Negative contribution)
+    document.getElementById('btn-withdraw-goal').addEventListener('click', async () => {
+        const goalId = document.getElementById('modal-contribute-goal-id').value;
+        const amount = parseFloat(document.getElementById('input-contribute-amount').value);
+
+        if (!amount || amount <= 0) {
+            alert("Please enter a valid amount to withdraw.");
+            return;
+        }
+
+        if (confirm(`Are you sure you want to move $${amount} back to Savings?`)) {
+            try {
+                await DB.contributeToGoal(currentUser.uid, goalId, -amount);
+                closeContributeGoalModal();
+                document.getElementById('form-contribute-goal').reset();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+    });
+
+
     // Start Auth
     Auth.init(handleUserChange);
 });
@@ -359,21 +450,41 @@ function loadParentDashboard() {
                      <button class="flex-1 px-4 py-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl font-medium transition-colors btn-set-allowance" data-id="${kid.id}">Allowance</button>
                      <button class="flex-1 px-4 py-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl font-medium transition-colors btn-set-interest" data-id="${kid.id}">Interest</button>
                 </div>
+                <button class="w-full py-2 rounded-xl font-medium transition-colors btn-toggle-card ${kid.isCardFrozen ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-id="${kid.id}" data-frozen="${kid.isCardFrozen || false}">
+                    ${kid.isCardFrozen ? '❄️ Unfreeze Card' : '🔒 Freeze Card'}
+                </button>
+            `;
+                <button class="w-full py-2 rounded-xl font-medium transition-colors btn-toggle-card mb-2 ${kid.isCardFrozen ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-id="${kid.id}" data-frozen="${kid.isCardFrozen || false}">
+                    ${kid.isCardFrozen ? '❄️ Unfreeze Card' : '🔒 Freeze Card'}
+                </button>
+                 <div class="flex items-center justify-between bg-indigo-50 p-3 rounded-xl">
+                    <span class="text-sm font-medium text-indigo-900">Financial Quizzes</span>
+                    <button class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors btn-toggle-quizzes ${kid.quizzesEnabled !== false ? 'bg-indigo-600' : 'bg-slate-300'}" data-id="${kid.id}" data-enabled="${kid.quizzesEnabled !== false}">
+                        <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${kid.quizzesEnabled !== false ? 'translate-x-6' : 'translate-x-1'}"></span>
+                    </button>
+                </div>
             `;
             list.appendChild(card);
 
             // Subscribe to realtime balance
             const unsub = DB.subscribeToKid(kid.id, (updatedKid) => {
-                const el = document.getElementById(`bal-${kid.id}`);
-                const elSav = document.getElementById(`sav-${kid.id}`);
-                if (el) el.innerText = `$${(updatedKid.balance || 0).toFixed(2)}`;
-                if (elSav) elSav.innerText = `$${(updatedKid.savingsBalance || 0).toFixed(2)}`;
+                const el = document.getElementById(`bal - ${ kid.id } `);
+                const elSav = document.getElementById(`sav - ${ kid.id } `);
+                if (el) el.innerText = `$${ (updatedKid.balance || 0).toFixed(2) } `;
+                if (elSav) elSav.innerText = `$${ (updatedKid.savingsBalance || 0).toFixed(2) } `;
+                
+                // Update toggle states just in case
+                const quizBtn = card.querySelector('.btn-toggle-quizzes');
+                const isEnabled = updatedKid.quizzesEnabled !== false;
+                quizBtn.className = `relative inline - flex h - 6 w - 11 items - center rounded - full transition - colors btn - toggle - quizzes ${ isEnabled ? 'bg-indigo-600' : 'bg-slate-300' } `;
+                quizBtn.querySelector('span').className = `inline - block h - 4 w - 4 transform rounded - full bg - white transition - transform ${ isEnabled ? 'translate-x-6' : 'translate-x-1' } `;
+                quizBtn.dataset.enabled = isEnabled;
             });
             unsubscribes.push(unsub);
 
             // Subscribe to recent transactions (limit 3 for compact view)
             const unsubTx = DB.subscribeToTransactions(kid.id, (txs) => {
-                const listEl = document.getElementById(`tx-list-${kid.id}`);
+                const listEl = document.getElementById(`tx - list - ${ kid.id } `);
                 if (!listEl) return;
 
                 if (txs.length === 0) {
@@ -389,15 +500,27 @@ function loadParentDashboard() {
 
                     const li = document.createElement('li');
                     li.className = 'flex justify-between items-center bg-slate-50 p-2 rounded-lg';
-                    li.innerHTML = `
-                        <div class="truncate mr-2">
-                            <p class="font-medium text-slate-700 truncate" title="${tx.description}">${tx.description}</p>
-                            <p class="text-[10px] text-slate-400">${date}</p>
-                        </div>
-                        <span class="font-bold whitespace-nowrap ${isPos ? 'text-green-600' : 'text-slate-600'}">
-                            ${isPos ? '+' : ''}$${Math.abs(tx.amount).toFixed(2)}
-                        </span>
-                    `;
+
+                    // Create elements securely
+                    const leftDiv = document.createElement('div');
+                    leftDiv.className = 'truncate mr-2';
+
+                    const descP = document.createElement('p');
+                    descP.className = 'font-medium text-slate-700 truncate';
+                    descP.title = tx.description;
+                    descP.textContent = tx.description; // Secure
+
+                    const dateP = document.createElement('p');
+                    dateP.className = 'text-[10px] text-slate-400';
+                    dateP.textContent = date;
+
+                    leftDiv.append(descP, dateP);
+
+                    const rightSpan = document.createElement('span');
+                    rightSpan.className = `font - bold whitespace - nowrap ${ isPos ? 'text-green-600' : 'text-slate-600' } `;
+                    rightSpan.textContent = `${ isPos ? '+' : '' }$${ Math.abs(tx.amount).toFixed(2) } `;
+
+                    li.append(leftDiv, rightSpan);
                     listEl.appendChild(li);
                 });
             });
@@ -408,7 +531,7 @@ function loadParentDashboard() {
                 document.getElementById('modal-transaction').classList.remove('hidden');
                 document.getElementById('modal-kid-id').value = kid.id;
                 document.getElementById('modal-transaction-type').value = 'add';
-                document.getElementById('modal-transaction-title').innerText = `Add Money to ${kid.displayName}`;
+                document.getElementById('modal-transaction-title').innerText = `Add Money to ${ kid.displayName } `;
 
                 // Show account selector
                 document.getElementById('modal-transaction-account').closest('div').classList.remove('hidden');
@@ -422,7 +545,7 @@ function loadParentDashboard() {
                 document.getElementById('modal-transaction').classList.remove('hidden');
                 document.getElementById('modal-kid-id').value = kid.id;
                 document.getElementById('modal-transaction-type').value = 'subtract';
-                document.getElementById('modal-transaction-title').innerText = `Subtract from ${kid.displayName}`;
+                document.getElementById('modal-transaction-title').innerText = `Subtract from ${ kid.displayName } `;
 
                 // Show account selector
                 document.getElementById('modal-transaction-account').closest('div').classList.remove('hidden');
@@ -445,7 +568,32 @@ function loadParentDashboard() {
                 const currentRate = (kid.interestRate !== undefined) ? (kid.interestRate * 100).toFixed(2) : "5.00";
                 document.getElementById('input-interest-rate').value = currentRate;
             });
-        });
+
+            card.querySelector('.btn-toggle-card').addEventListener('click', async (e) => {
+                const isFrozen = e.target.dataset.frozen === 'true';
+                const action = isFrozen ? 'Unfreeze' : 'Freeze';
+
+                if (confirm(`Are you sure you want to ${ action } ${ kid.displayName } 's card?`)) {
+            try {
+                await DB.toggleCardFreeze(kid.id, !isFrozen);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+            });
+
+    card.querySelector('.btn-toggle-quizzes').addEventListener('click', async (e) => {
+        // Toggle
+        const btn = e.currentTarget; // important to get the button, not the span
+        const isEnabled = btn.dataset.enabled === 'true';
+        try {
+            await DB.toggleQuizzes(kid.id, !isEnabled);
+            // UI updates automatically via listener
+        } catch (err) {
+            console.error(err);
+        }
+    });
+});
     });
 }
 
@@ -495,6 +643,18 @@ function loadKidDashboard() {
                 p.className = 'text-xs text-emerald-200 mt-1';
                 p.innerText = `${4 - count} withdrawals left this month`;
                 savDisplay.parentElement.appendChild(p);
+            }
+        }
+
+        // Card Status
+        const cardStatus = document.getElementById('kid-card-status');
+        if (cardStatus) {
+            if (kid.isCardFrozen) {
+                cardStatus.className = "flex items-center gap-2 bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-red-500/30";
+                cardStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span> Frozen`;
+            } else {
+                cardStatus.className = "flex items-center gap-2 bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 border border-green-500/30";
+                cardStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500"></span> Active`;
             }
         }
     });
@@ -564,25 +724,120 @@ function loadKidDashboard() {
 
             const item = document.createElement('li');
             item.className = 'p-4 flex justify-between items-center hover:bg-slate-50 transition-colors';
-            item.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="p-2 rounded-lg ${isPos ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+
+            // Create elements securely
+            const leftDiv = document.createElement('div');
+            leftDiv.className = 'flex items-center gap-3';
+
+            const iconDiv = document.createElement('div');
+            iconDiv.className = `p-2 rounded-lg ${isPos ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`;
+            // Icons are static SVG, innerHTML is fine here if just SVG, but we can build it too or leave as is if no user content
+            iconDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isPos ? 'M12 4v16m8-8H4' : 'M20 12H4'}" /> 
-                             <!-- Simplistic icons -->
-                        </svg>
-                    </div>
-                    <div>
-                        <p class="font-medium text-slate-800">${tx.description}</p>
-                        <p class="text-xs text-slate-400">${date}</p>
-                    </div>
-                </div>
-                <span class="font-bold ${isPos ? 'text-green-600' : 'text-slate-900'}">
-                    ${isPos ? '+' : ''}$${Math.abs(tx.amount).toFixed(2)}
-                </span>
-            `;
+                        </svg>`;
+
+            const textDiv = document.createElement('div');
+
+            const descP = document.createElement('p');
+            descP.className = 'font-medium text-slate-800';
+            descP.textContent = tx.description; // Secure
+
+            const dateP = document.createElement('p');
+            dateP.className = 'text-xs text-slate-400';
+            dateP.textContent = date;
+
+            textDiv.append(descP, dateP);
+            leftDiv.append(iconDiv, textDiv);
+
+            const rightSpan = document.createElement('span');
+            rightSpan.className = `font-bold ${isPos ? 'text-green-600' : 'text-slate-900'}`;
+            rightSpan.textContent = `${isPos ? '+' : ''}$${Math.abs(tx.amount).toFixed(2)}`;
+
+            item.append(leftDiv, rightSpan);
             list.appendChild(item);
         });
     });
     unsubscribes.push(unsubTx);
+
+    // Savings Goals
+    const goalsList = document.getElementById('kid-goals-list');
+    const unsubGoals = DB.subscribeToGoals(currentUser.uid, (goals) => {
+        goalsList.innerHTML = '';
+        if (goals.length === 0) {
+            // Initial empty state (except the Add button is header)
+            goalsList.innerHTML = `
+                <div class="col-span-full text-center py-6 text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl">
+                    <p>No goals yet. Start saving for something special!</p>
+                </div>
+            `;
+            return;
+        }
+
+        goals.forEach(goal => {
+            const percent = Math.min(100, (goal.currentAmount / goal.targetAmount) * 100).toFixed(0);
+
+            const card = document.createElement('div');
+            card.className = 'bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center text-center relative group';
+            card.innerHTML = `
+                <div class="text-4xl mb-2">${goal.icon}</div>
+                <h4 class="font-bold text-slate-800 mb-1">${goal.name}</h4>
+                <p class="text-xs text-slate-500 mb-3">$${goal.currentAmount.toFixed(0)} of $${goal.targetAmount}</p>
+                
+                <div class="w-full bg-slate-100 rounded-full h-2.5 mb-3 overflow-hidden">
+                    <div class="bg-indigo-500 h-2.5 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                </div>
+
+                <div class="flex gap-2 w-full mt-auto">
+                    <button class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold py-2 rounded-lg transition-colors btn-contribute" data-id="${goal.id}">
+                        Add Money
+                    </button>
+                </div>
+                
+                <button class="absolute top-2 right-2 text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity btn-delete-goal" data-id="${goal.id}" title="Delete Goal">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            `;
+            goalsList.appendChild(card);
+
+            // Listeners
+            card.querySelector('.btn-contribute').addEventListener('click', () => {
+                document.getElementById('modal-contribute-goal').classList.remove('hidden');
+                document.getElementById('modal-contribute-goal-id').value = goal.id;
+                document.getElementById('contribute-available-balance').innerText = savDisplay.innerText;
+            });
+
+            card.querySelector('.btn-delete-goal').addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (confirm("Delete this goal? Any money in it will move back to your Savings.")) {
+                    try {
+                        await DB.deleteSavingsGoal(currentUser.uid, goal.id);
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                }
+            });
+        });
+    });
+    unsubscribes.push(unsubGoals);
+}
+
+// Quiz Helper
+async function checkQuizAnswer(selectedIndex, quiz) {
+    if (selectedIndex === quiz.correct) {
+        // Correct
+        document.getElementById('quiz-content').classList.add('hidden');
+        document.getElementById('quiz-success').classList.remove('hidden');
+
+        try {
+            await DB.markQuizCompleted(currentUser.uid, quiz.id, quiz.reward);
+        } catch (err) {
+            console.error(err); // Silent fail or log
+        }
+    } else {
+        // Wrong
+        document.getElementById('quiz-content').classList.add('hidden');
+        document.getElementById('quiz-fail').classList.remove('hidden');
+    }
 }
