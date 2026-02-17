@@ -14,9 +14,6 @@ const nav = {
     logout: document.getElementById('btn-logout')
 };
 
-// State
-let currentUser = null;
-let currentRole = null;
 const QUIZ_DATA = [
     { id: 'q1', question: "What happens to your money in a savings account?", options: ["It disappears", "The bank pays you interest", "It turns into candy"], correct: 1, reward: 0.50 },
     { id: 'q2', question: "If you save $5 a week for 4 weeks, how much do you have?", options: ["$20", "$10", "$500"], correct: 0, reward: 0.50 },
@@ -25,9 +22,6 @@ const QUIZ_DATA = [
     { id: 'q5', question: "Which is a 'Need' (not a 'Want')?", options: ["New Video Game", "Designer Shoes", "Healthy Food"], correct: 2, reward: 0.50 }
 ];
 
-// State
-let currentUser = null;
-let currentRole = null;
 let unsubscribes = []; // Listeners to clean up
 let currentQuiz = null; // Track active quiz
 
@@ -450,10 +444,6 @@ function loadParentDashboard() {
                      <button class="flex-1 px-4 py-2 text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-xl font-medium transition-colors btn-set-allowance" data-id="${kid.id}">Allowance</button>
                      <button class="flex-1 px-4 py-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl font-medium transition-colors btn-set-interest" data-id="${kid.id}">Interest</button>
                 </div>
-                <button class="w-full py-2 rounded-xl font-medium transition-colors btn-toggle-card ${kid.isCardFrozen ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-id="${kid.id}" data-frozen="${kid.isCardFrozen || false}">
-                    ${kid.isCardFrozen ? '❄️ Unfreeze Card' : '🔒 Freeze Card'}
-                </button>
-            `;
                 <button class="w-full py-2 rounded-xl font-medium transition-colors btn-toggle-card mb-2 ${kid.isCardFrozen ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}" data-id="${kid.id}" data-frozen="${kid.isCardFrozen || false}">
                     ${kid.isCardFrozen ? '❄️ Unfreeze Card' : '🔒 Freeze Card'}
                 </button>
@@ -468,23 +458,23 @@ function loadParentDashboard() {
 
             // Subscribe to realtime balance
             const unsub = DB.subscribeToKid(kid.id, (updatedKid) => {
-                const el = document.getElementById(`bal - ${ kid.id } `);
-                const elSav = document.getElementById(`sav - ${ kid.id } `);
-                if (el) el.innerText = `$${ (updatedKid.balance || 0).toFixed(2) } `;
-                if (elSav) elSav.innerText = `$${ (updatedKid.savingsBalance || 0).toFixed(2) } `;
-                
+                const el = document.getElementById(`bal - ${kid.id} `);
+                const elSav = document.getElementById(`sav - ${kid.id} `);
+                if (el) el.innerText = `$${(updatedKid.balance || 0).toFixed(2)} `;
+                if (elSav) elSav.innerText = `$${(updatedKid.savingsBalance || 0).toFixed(2)} `;
+
                 // Update toggle states just in case
                 const quizBtn = card.querySelector('.btn-toggle-quizzes');
                 const isEnabled = updatedKid.quizzesEnabled !== false;
-                quizBtn.className = `relative inline - flex h - 6 w - 11 items - center rounded - full transition - colors btn - toggle - quizzes ${ isEnabled ? 'bg-indigo-600' : 'bg-slate-300' } `;
-                quizBtn.querySelector('span').className = `inline - block h - 4 w - 4 transform rounded - full bg - white transition - transform ${ isEnabled ? 'translate-x-6' : 'translate-x-1' } `;
+                quizBtn.className = `relative inline - flex h - 6 w - 11 items - center rounded - full transition - colors btn - toggle - quizzes ${isEnabled ? 'bg-indigo-600' : 'bg-slate-300'} `;
+                quizBtn.querySelector('span').className = `inline - block h - 4 w - 4 transform rounded - full bg - white transition - transform ${isEnabled ? 'translate-x-6' : 'translate-x-1'} `;
                 quizBtn.dataset.enabled = isEnabled;
             });
             unsubscribes.push(unsub);
 
             // Subscribe to recent transactions (limit 3 for compact view)
             const unsubTx = DB.subscribeToTransactions(kid.id, (txs) => {
-                const listEl = document.getElementById(`tx - list - ${ kid.id } `);
+                const listEl = document.getElementById(`tx - list - ${kid.id} `);
                 if (!listEl) return;
 
                 if (txs.length === 0) {
@@ -517,8 +507,8 @@ function loadParentDashboard() {
                     leftDiv.append(descP, dateP);
 
                     const rightSpan = document.createElement('span');
-                    rightSpan.className = `font - bold whitespace - nowrap ${ isPos ? 'text-green-600' : 'text-slate-600' } `;
-                    rightSpan.textContent = `${ isPos ? '+' : '' }$${ Math.abs(tx.amount).toFixed(2) } `;
+                    rightSpan.className = `font - bold whitespace - nowrap ${isPos ? 'text-green-600' : 'text-slate-600'} `;
+                    rightSpan.textContent = `${isPos ? '+' : ''}$${Math.abs(tx.amount).toFixed(2)} `;
 
                     li.append(leftDiv, rightSpan);
                     listEl.appendChild(li);
@@ -531,7 +521,7 @@ function loadParentDashboard() {
                 document.getElementById('modal-transaction').classList.remove('hidden');
                 document.getElementById('modal-kid-id').value = kid.id;
                 document.getElementById('modal-transaction-type').value = 'add';
-                document.getElementById('modal-transaction-title').innerText = `Add Money to ${ kid.displayName } `;
+                document.getElementById('modal-transaction-title').innerText = `Add Money to ${kid.displayName} `;
 
                 // Show account selector
                 document.getElementById('modal-transaction-account').closest('div').classList.remove('hidden');
@@ -545,7 +535,7 @@ function loadParentDashboard() {
                 document.getElementById('modal-transaction').classList.remove('hidden');
                 document.getElementById('modal-kid-id').value = kid.id;
                 document.getElementById('modal-transaction-type').value = 'subtract';
-                document.getElementById('modal-transaction-title').innerText = `Subtract from ${ kid.displayName } `;
+                document.getElementById('modal-transaction-title').innerText = `Subtract from ${kid.displayName} `;
 
                 // Show account selector
                 document.getElementById('modal-transaction-account').closest('div').classList.remove('hidden');
@@ -573,27 +563,27 @@ function loadParentDashboard() {
                 const isFrozen = e.target.dataset.frozen === 'true';
                 const action = isFrozen ? 'Unfreeze' : 'Freeze';
 
-                if (confirm(`Are you sure you want to ${ action } ${ kid.displayName } 's card?`)) {
-            try {
-                await DB.toggleCardFreeze(kid.id, !isFrozen);
-            } catch (err) {
-                alert(err.message);
-            }
-        }
+                if (confirm(`Are you sure you want to ${action} ${kid.displayName} 's card?`)) {
+                    try {
+                        await DB.toggleCardFreeze(kid.id, !isFrozen);
+                    } catch (err) {
+                        alert(err.message);
+                    }
+                }
             });
 
-    card.querySelector('.btn-toggle-quizzes').addEventListener('click', async (e) => {
-        // Toggle
-        const btn = e.currentTarget; // important to get the button, not the span
-        const isEnabled = btn.dataset.enabled === 'true';
-        try {
-            await DB.toggleQuizzes(kid.id, !isEnabled);
-            // UI updates automatically via listener
-        } catch (err) {
-            console.error(err);
-        }
-    });
-});
+            card.querySelector('.btn-toggle-quizzes').addEventListener('click', async (e) => {
+                // Toggle
+                const btn = e.currentTarget; // important to get the button, not the span
+                const isEnabled = btn.dataset.enabled === 'true';
+                try {
+                    await DB.toggleQuizzes(kid.id, !isEnabled);
+                    // UI updates automatically via listener
+                } catch (err) {
+                    console.error(err);
+                }
+            });
+        });
     });
 }
 
